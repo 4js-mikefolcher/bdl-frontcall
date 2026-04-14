@@ -1,0 +1,20 @@
+LAYOUT
+   GRID
+{
+[lbl001            ][fld001                             ]
+[lbl002            ][fld002                             ]
+[lbl003            ][fld003                             ]
+}
+   END --GRID
+END --LAYOUT
+
+ATTRIBUTES
+
+   LABEL lbl001: TEXT="Status:";
+   EDIT fld001 = formonly.geoStatus, NOENTRY;
+   LABEL lbl002: TEXT="Latitude:";
+   EDIT fld002 = formonly.geoLatitude, NOENTRY;
+   LABEL lbl003: TEXT="Longitude:";
+   EDIT fld003 = formonly.geoLongitude, NOENTRY;
+
+END --ATTRIBUTES

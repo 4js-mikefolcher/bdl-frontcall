@@ -1,0 +1,31 @@
+LAYOUT
+   GRID
+{
+[lbl001                                                 ]
+[lbl002            ][fld001                             ]
+[lbl003            ][fld002                             ]
+[lbl004            ][fld003                             ]
+[                  ][                                   ]
+[                  ][                                   ]
+[                  ][                                   ]
+[lbl005            ][fld004                             ]
+[lbl006            ][fld005                             ]
+}
+   END --GRID
+END --LAYOUT
+
+ATTRIBUTES
+
+   LABEL lbl001 = formonly.fieldLabel;
+   LABEL lbl002: TEXT="To:";
+   EDIT fld001 = formonly.mailTo;
+   LABEL lbl003: TEXT="Subject:";
+   EDIT fld002 = formonly.mailSubject;
+   LABEL lbl004: TEXT="Content:";
+   TEXTEDIT fld003 = formonly.mailContent, STRETCH=BOTH;
+   LABEL lbl005: TEXT="CC:";
+   EDIT fld004 = formonly.mailCC;
+   LABEL lbl006: TEXT="BCC:";
+   EDIT fld005 = formonly.mailBCC;
+
+END --ATTRIBUTES

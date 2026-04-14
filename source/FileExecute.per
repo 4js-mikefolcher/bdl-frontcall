@@ -1,0 +1,17 @@
+LAYOUT
+   GRID
+{
+[lbl001            ][fld001                             ]
+[lbl002            ][fld002                             ]
+}
+   END --GRID
+END --LAYOUT
+
+ATTRIBUTES
+
+   LABEL lbl001 = formonly.fieldLabel;
+   BUTTONEDIT fld001 = formonly.textField, IMAGE="fa-file", ACTION=zoom, SCROLL;
+   LABEL lbl002 = formonly.runLabel;
+   COMBOBOX fld002 = formonly.runMode;
+
+END --ATTRIBUTES

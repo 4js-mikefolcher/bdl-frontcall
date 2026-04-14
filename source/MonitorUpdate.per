@@ -1,0 +1,19 @@
+LAYOUT
+   GRID
+{
+[lbl001                                                 ]
+[lbl002            ][fld001                             ]
+[lbl003            ][fld002                             ]
+}
+   END --GRID
+END --LAYOUT
+
+ATTRIBUTES
+
+   LABEL lbl001 = formonly.fieldLabel;
+   LABEL lbl002: TEXT="Update File:";
+   BUTTONEDIT fld001 = formonly.updatePath, IMAGE="fa-file", ACTION=zoom, SCROLL;
+   LABEL lbl003: TEXT="Warning Text:";
+   EDIT fld002 = formonly.warningText;
+
+END --ATTRIBUTES

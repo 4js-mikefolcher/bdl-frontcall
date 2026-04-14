@@ -1,0 +1,22 @@
+LAYOUT
+   GRID
+{
+[lbl001                                                 ]
+[lbl002            ][fld001                             ]
+[lbl003            ][fld002                             ]
+[lbl004            ][fld003                             ]
+}
+   END --GRID
+END --LAYOUT
+
+ATTRIBUTES
+
+   LABEL lbl001 = formonly.fieldLabel;
+   LABEL lbl002: TEXT="Title:";
+   EDIT fld001 = formonly.notifTitle;
+   LABEL lbl003: TEXT="Content:";
+   EDIT fld002 = formonly.notifContent;
+   LABEL lbl004: TEXT="Icon:";
+   EDIT fld003 = formonly.notifIcon;
+
+END --ATTRIBUTES

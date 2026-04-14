@@ -1,0 +1,21 @@
+LAYOUT (TEXT="Front Call List")
+   TABLE
+{
+ Frontcall                              |Frontend
+[fc001                                  |fc002              ]
+}
+   END --TABLE
+END --LAYOUT
+
+ATTRIBUTES
+
+   EDIT fc001 = formonly.fcName, SCROLL;
+   EDIT fc002 = formonly.fcFrontend;
+
+END --ATTRIBUTES
+
+INSTRUCTIONS
+
+   SCREEN RECORD srFrontcall(formonly.fcName, formonly.fcFrontend);
+
+END --INSTRUCTIONS

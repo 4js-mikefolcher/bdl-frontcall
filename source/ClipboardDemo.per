@@ -1,0 +1,31 @@
+LAYOUT (TEXT="Clipboard Frontcall Demo")
+   GRID
+{
+[lbl001                                                                    ]
+[lbl002      ][fld001                              ][btn001]
+[lbl003                          |lbl004                                   ]
+[txt001                          |txt002                                   ]
+[                                |                                         ]
+[                                |                                         ]
+[                                |                                         ]
+[                                |                                         ]
+[                                |                                         ]
+[                                |                                         ]
+[                                |                                         ]
+[                                |                                         ]
+}
+   END --GRID
+END --LAYOUT
+
+ATTRIBUTES
+
+   LABEL lbl001 = formonly.fieldLabel;
+   LABEL lbl002: TEXT="Action:";
+   COMBOBOX fld001 = formonly.cbAction;
+   BUTTON btn001: execute, TEXT="Execute", IMAGE="fa-play";
+   LABEL lbl003: TEXT="Input";
+   LABEL lbl004: TEXT="Output";
+   TEXTEDIT txt001 = formonly.inputText, STRETCH=BOTH;
+   TEXTEDIT txt002 = formonly.outputText, NOENTRY, STRETCH=BOTH;
+
+END --ATTRIBUTES

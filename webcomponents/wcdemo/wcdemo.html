@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Web Component Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 10px;
+            background: #f5f5f5;
+        }
+        #output {
+            border: 1px solid #ccc;
+            padding: 8px;
+            margin-top: 10px;
+            background: #ffffff;
+            min-height: 30px;
+        }
+    </style>
+    <script>
+        // gICAPI interface for Genero web component communication
+        document.addEventListener("DOMContentLoaded", function() {
+            if (typeof gICAPI !== "undefined") {
+                gICAPI.SetFocus = function() {};
+                gICAPI.SetData = function(data) {
+                    document.getElementById("output").innerText = "Data: " + data;
+                };
+            }
+        });
+
+        // Functions callable via webcomponent.call frontcall
+        function echo(message) {
+            document.getElementById("output").innerText = message;
+            return message;
+        }
+
+        function getTimestamp() {
+            var ts = new Date().toISOString();
+            document.getElementById("output").innerText = ts;
+            return ts;
+        }
+
+        function add(a, b) {
+            var result = Number(a) + Number(b);
+            document.getElementById("output").innerText = "Result: " + result;
+            return String(result);
+        }
+
+        function greet(name) {
+            var msg = "Hello, " + (name || "World") + "!";
+            document.getElementById("output").innerText = msg;
+            return msg;
+        }
+    </script>
+</head>
+<body>
+    <strong>Web Component Demo</strong>
+    <p>Functions: echo(msg), getTimestamp(), add(a,b), greet(name)</p>
+    <div id="output">Ready</div>
+</body>
+</html>

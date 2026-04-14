@@ -1,0 +1,19 @@
+LAYOUT
+   GRID
+{
+[lbl001                                                 ]
+[lbl002            ][fld001                             ]
+[lbl003            ][fld002                             ]
+}
+   END --GRID
+END --LAYOUT
+
+ATTRIBUTES
+
+   LABEL lbl001 = formonly.fieldLabel;
+   LABEL lbl002: TEXT="Key:";
+   EDIT fld001 = formonly.storageKey;
+   LABEL lbl003: TEXT="Value:";
+   EDIT fld002 = formonly.storageValue;
+
+END --ATTRIBUTES

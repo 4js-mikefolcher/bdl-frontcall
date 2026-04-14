@@ -1,0 +1,24 @@
+LAYOUT (TEXT="Table Front Call Demo")
+   TABLE
+{
+ Column 1                    |Column 2                    |Column 3                    |Col 4      |Column 5
+[tc001                       |tc002                       |tc003                       |tc004      |tc005                       ]
+}
+   END --TABLE
+END --LAYOUT
+
+ATTRIBUTES
+
+   EDIT tc001 = formonly.col1;
+   EDIT tc002 = formonly.col2;
+   EDIT tc003 = formonly.col3;
+   EDIT tc004 = formonly.col4;
+   EDIT tc005 = formonly.col5;
+
+END --ATTRIBUTES
+
+INSTRUCTIONS
+
+   SCREEN RECORD srTableDemo(formonly.col1, formonly.col2, formonly.col3, formonly.col4, formonly.col5);
+
+END --INSTRUCTIONS

@@ -1,0 +1,28 @@
+LAYOUT
+   GRID
+{
+[lbl001                                                 ]
+[lbl002            ][fld001                             ]
+[lbl003            ][fld002                             ]
+[lbl004            ][fld003                             ]
+[wc001                                                  ]
+[                                                       ]
+[                                                       ]
+[                                                       ]
+[                                                       ]
+}
+   END --GRID
+END --LAYOUT
+
+ATTRIBUTES
+
+   LABEL lbl001 = formonly.fieldLabel;
+   LABEL lbl002: TEXT="Function:";
+   EDIT fld001 = formonly.funcName;
+   LABEL lbl003: TEXT="Parameter:";
+   EDIT fld002 = formonly.funcParam;
+   LABEL lbl004: TEXT="Result:";
+   EDIT fld003 = formonly.resultValue, NOENTRY;
+   WEBCOMPONENT wc001 = formonly.wc, COMPONENTTYPE="wcdemo", STRETCH=BOTH;
+
+END --ATTRIBUTES
