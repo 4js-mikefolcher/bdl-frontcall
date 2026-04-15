@@ -1,0 +1,21 @@
+LAYOUT (TEXT="Theme Frontcall Demo")
+   GRID
+{
+[lbl001                                                                    ]
+[lbl002      ][fld001                                                      ]
+[lbl003                                                                    ]
+[fld002                                                                    ]
+[                                                                          ]
+}
+   END --GRID
+END --LAYOUT
+
+ATTRIBUTES
+
+   LABEL    lbl001 = formonly.fieldLabel;
+   LABEL    lbl002: TEXT="Theme:";
+   COMBOBOX fld001 = formonly.themeName;
+   LABEL    lbl003: TEXT="Status:";
+   EDIT     fld002 = formonly.result, NOENTRY;
+
+END --ATTRIBUTES

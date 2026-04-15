@@ -1,0 +1,28 @@
+LAYOUT (TEXT="LocalStorage Frontcall Demo")
+   GRID
+{
+[lbl001                                                                    ]
+[lbl002      ][fld001                                   ][btn001           ]
+[lbl003      ][fld002                                                      ]
+[lbl004      ][fld003                                                      ]
+[lbl005                                                                    ]
+[txt001                                                                    ]
+[                                                                          ]
+}
+   END --GRID
+END --LAYOUT
+
+ATTRIBUTES
+
+   LABEL    lbl001 = formonly.fieldLabel;
+   LABEL    lbl002: TEXT="Action:";
+   COMBOBOX fld001 = formonly.action;
+   BUTTON   btn001: execute, TEXT="Execute", IMAGE="fa-play";
+   LABEL    lbl003: TEXT="Key:";
+   EDIT     fld002 = formonly.storageKey;
+   LABEL    lbl004: TEXT="Value:";
+   EDIT     fld003 = formonly.storageValue;
+   LABEL    lbl005: TEXT="Result:";
+   TEXTEDIT txt001 = formonly.result, NOENTRY, STRETCH=BOTH;
+
+END --ATTRIBUTES

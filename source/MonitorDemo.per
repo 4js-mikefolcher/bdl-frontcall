@@ -1,0 +1,28 @@
+LAYOUT (TEXT="Monitor Frontcall Demo")
+   GRID
+{
+[lbl001                                                                    ]
+[lbl002      ][fld001                                   ][btn001           ]
+[lbl003      ][fld002                                                      ]
+[lbl004      ][fld003                                                      ]
+[lbl005                                                                    ]
+[fld004                                                                    ]
+[                                                                          ]
+}
+   END --GRID
+END --LAYOUT
+
+ATTRIBUTES
+
+   LABEL    lbl001 = formonly.fieldLabel;
+   LABEL    lbl002: TEXT="Action:";
+   COMBOBOX fld001 = formonly.action;
+   BUTTON   btn001: execute, TEXT="Execute", IMAGE="fa-play";
+   LABEL    lbl003: TEXT="Update File Path:";
+   EDIT     fld002 = formonly.updatePath;
+   LABEL    lbl004: TEXT="Warning Text (optional):";
+   EDIT     fld003 = formonly.warningText;
+   LABEL    lbl005: TEXT="Result:";
+   EDIT     fld004 = formonly.result, NOENTRY;
+
+END --ATTRIBUTES

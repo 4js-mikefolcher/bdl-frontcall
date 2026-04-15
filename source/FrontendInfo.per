@@ -1,16 +1,21 @@
-LAYOUT
-   GRID
+LAYOUT (TEXT="Frontend Information")
+   TABLE
 {
-[lbl001            ][fld001                             ]
-[fld002                                                 ]
+ Property                         |Value
+[tc001                            |tc002                                                    ]
 }
-   END --GRID
+   END --TABLE
 END --LAYOUT
 
 ATTRIBUTES
 
-   LABEL lbl001 = formonly.fieldLabel;
-   COMBOBOX fld001 = formonly.feInfo;
-   EDIT fld002 = formonly.feValue, NOENTRY;
+   EDIT tc001 = formonly.propName;
+   EDIT tc002 = formonly.propValue;
 
 END --ATTRIBUTES
+
+INSTRUCTIONS
+
+   SCREEN RECORD srFeInfo(formonly.propName, formonly.propValue);
+
+END --INSTRUCTIONS

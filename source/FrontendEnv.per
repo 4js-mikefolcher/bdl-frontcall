@@ -2,7 +2,9 @@ LAYOUT
    GRID
 {
 [lbl001            ][fld001                             ]
-[fld002                                                 ]
+[txt001                                                 ]
+[                                                       ]
+[                                                       ]
 }
    END --GRID
 END --LAYOUT
@@ -11,6 +13,6 @@ ATTRIBUTES
 
    LABEL lbl001 = formonly.fieldLabel;
    EDIT fld001 = formonly.feVariable;
-   EDIT fld002 = formonly.feValue, NOENTRY;
+   TEXTEDIT txt001 = formonly.feValue, NOENTRY, STRETCH=BOTH;
 
 END --ATTRIBUTES

@@ -69,32 +69,57 @@ PUBLIC FUNCTION executeProgram(operation STRING) RETURNS ()
 END FUNCTION
 
 PUBLIC FUNCTION frontendInfo() RETURNS ()
-   DEFINE propName STRING
-   DEFINE propValue STRING
+   DEFINE feData DYNAMIC ARRAY OF RECORD
+      propName  STRING,
+      propValue STRING
+   END RECORD
+   DEFINE propList DYNAMIC ARRAY OF STRING = [
+      "browserName",
+      "colorScheme",
+      "dataDirectory",
+      "deviceId",
+      "deviceModel",
+      "feName",
+      "fePath",
+      "freeStorageSpace",
+      "ip",
+      "numScreens",
+      "osType",
+      "osVersion",
+      "ppi",
+      "screenResolution",
+      "target",
+      "userPreferredLang",
+      "windowSize"
+   ]
+   DEFINE idx INTEGER
 
    CALL openWindow("FrontendInfo", "Frontend Information")
 
-   INPUT propName WITHOUT DEFAULTS FROM formonly.feInfo
-      ATTRIBUTES(UNBUFFERED)
-      BEFORE INPUT
-         DISPLAY "Select a Frontend Property:" TO formonly.fieldLabel
-         CALL setFrontendCombo()
-      ON CHANGE feInfo
-         IF propName IS NOT NULL THEN
-            LET propValue = getFrontendInfo(propName)
-            DISPLAY propValue TO formonly.feValue
-         END IF
+   FOR idx = 1 TO propList.getLength()
+      LET feData[idx].propName = propList[idx]
+      TRY
+         LET feData[idx].propValue = getFrontendInfo(propList[idx])
+      CATCH
+         LET feData[idx].propValue = SFMT("(error: %1)", err_get(STATUS))
+      END TRY
+   END FOR
+
+   DISPLAY ARRAY feData TO srFeInfo.*
+
+      ON ACTION refresh ATTRIBUTES(TEXT="Refresh", IMAGE="fa-refresh")
+         FOR idx = 1 TO propList.getLength()
+            TRY
+               LET feData[idx].propValue = getFrontendInfo(propList[idx])
+            CATCH
+               LET feData[idx].propValue = SFMT("(error: %1)", err_get(STATUS))
+            END TRY
+         END FOR
+
       ON ACTION CANCEL
-         EXIT INPUT
-      AFTER INPUT
-         IF propName IS NULL THEN
-            ERROR "Select a property to display"
-         ELSE
-            LET propValue = getFrontendInfo(propName)
-            DISPLAY propValue TO formonly.feValue
-         END IF
-         CONTINUE INPUT
-   END INPUT
+         EXIT DISPLAY
+
+   END DISPLAY
 
    LET int_flag = FALSE
    CALL closeWindow()
@@ -135,18 +160,27 @@ END FUNCTION #frontendEnvVar
 
 PUBLIC FUNCTION generateHardcopy()
    DEFINE resultSuccess BOOLEAN
+   DEFINE feName STRING
 
    CALL ui.Interface.frontCall(
-      "standard",
-      "hardCopy",
-      [1],
-      [resultSuccess]
+      "standard", "feInfo",
+      ["feName"], [feName]
    )
 
-   IF resultSuccess THEN
-      MESSAGE "Hardcopy generated successfully"
+   IF feName = "Genero Desktop Client" THEN
+      CALL ui.Interface.frontCall(
+         "standard",
+         "hardCopy",
+         [1],
+         [resultSuccess]
+      )
+      IF resultSuccess THEN
+         MESSAGE "Hardcopy generated successfully"
+      ELSE
+         ERROR "An error occurred generating the hardcopy"
+      END IF
    ELSE
-      ERROR "An error occurred generating the hardcopy"
+      ERROR "hardCopy is only supported in GDC"
    END IF
 
 END FUNCTION #generateHardcopy
@@ -156,6 +190,7 @@ PUBLIC FUNCTION launchUrl() RETURNS ()
 
    CALL openWindow("WebsiteLauncher", "Open URL")
 
+   LET webUrl = "https://www.4js.com"
    INPUT webUrl WITHOUT DEFAULTS FROM formonly.webUrl
       ATTRIBUTES(UNBUFFERED)
       BEFORE INPUT

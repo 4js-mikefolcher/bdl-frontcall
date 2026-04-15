@@ -1,0 +1,25 @@
+LAYOUT (TEXT="Browser Frontcall Demo")
+   GRID
+{
+[lbl001                                                                    ]
+[lbl002      ][fld001                                   ][btn001           ]
+[lbl003      ][fld002                                                      ]
+[lbl004                                                                    ]
+[fld003                                                                    ]
+[                                                                          ]
+}
+   END --GRID
+END --LAYOUT
+
+ATTRIBUTES
+
+   LABEL    lbl001 = formonly.fieldLabel;
+   LABEL    lbl002: TEXT="Action:";
+   COMBOBOX fld001 = formonly.action;
+   BUTTON   btn001: execute, TEXT="Execute", IMAGE="fa-play";
+   LABEL    lbl003: TEXT="Anchor Value:";
+   EDIT     fld002 = formonly.inputText;
+   LABEL    lbl004: TEXT="Result:";
+   EDIT     fld003 = formonly.result, NOENTRY;
+
+END --ATTRIBUTES

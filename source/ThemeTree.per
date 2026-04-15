@@ -1,0 +1,45 @@
+LAYOUT (TEXT="Available Themes")
+   TREE mytree (
+      PARENTIDCOLUMN = pid,
+      IDCOLUMN = id,
+      EXPANDEDCOLUMN = expanded,
+      ISNODECOLUMN = isnode
+   )
+   {
+    Name                                  |Title
+   [tc001                                 |tc002                                 ]
+   [tc001                                 |tc002                                 ]
+   [tc001                                 |tc002                                 ]
+   [tc001                                 |tc002                                 ]
+   [tc001                                 |tc002                                 ]
+   [tc001                                 |tc002                                 ]
+   [tc001                                 |tc002                                 ]
+   [tc001                                 |tc002                                 ]
+   [tc001                                 |tc002                                 ]
+   [tc001                                 |tc002                                 ]
+   [tc001                                 |tc002                                 ]
+   [tc001                                 |tc002                                 ]
+   [tc001                                 |tc002                                 ]
+   [tc001                                 |tc002                                 ]
+   [tc001                                 |tc002                                 ]
+   }
+   END --TREE
+END --LAYOUT
+
+ATTRIBUTES
+
+   EDIT tc001 = formonly.tname, IMAGECOLUMN = image;
+   EDIT tc002 = formonly.title;
+   PHANTOM formonly.pid;
+   PHANTOM formonly.id;
+   PHANTOM formonly.expanded;
+   PHANTOM formonly.isnode;
+   PHANTOM formonly.image;
+
+END --ATTRIBUTES
+
+INSTRUCTIONS
+
+   SCREEN RECORD srThemeTree(formonly.*);
+
+END --INSTRUCTIONS

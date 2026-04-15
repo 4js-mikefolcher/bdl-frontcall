@@ -1,0 +1,36 @@
+LAYOUT (TEXT="Web Component Frontcall Demo")
+   GRID
+{
+[lbl001                                                                        ]
+[lbl002     ][fld001                                       ][btn001           ]
+[lbl003     ][fld002                                                           ]
+[lbl004     ][fld003                    ][lbl005   ][fld004                   ]
+[lbl006     ][fld005                                                           ]
+[lbl007                                                                        ]
+[wc001                                                                         ]
+[                                                                              ]
+[                                                                              ]
+[                                                                              ]
+[                                                                              ]
+}
+   END --GRID
+END --LAYOUT
+
+ATTRIBUTES
+
+   LABEL   lbl001 = formonly.fieldLabel;
+   LABEL   lbl002: TEXT="Action:";
+   COMBOBOX fld001 = formonly.wcAction;
+   BUTTON  btn001: execute, TEXT="Execute", IMAGE="fa-play";
+   LABEL   lbl003: TEXT="Function:";
+   COMBOBOX fld002 = formonly.funcName;
+   LABEL   lbl004: TEXT="Param 1:";
+   EDIT    fld003 = formonly.funcParam1;
+   LABEL   lbl005: TEXT="Param 2:";
+   EDIT    fld004 = formonly.funcParam2;
+   LABEL   lbl006: TEXT="Result:";
+   EDIT    fld005 = formonly.result, NOENTRY;
+   LABEL   lbl007: TEXT="Web Component (wcdemo):";
+   WEBCOMPONENT wc001 = formonly.wc, COMPONENTTYPE="wcdemo", STRETCH=BOTH;
+
+END --ATTRIBUTES

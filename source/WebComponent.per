@@ -5,6 +5,7 @@ LAYOUT
 [lbl002            ][fld001                             ]
 [lbl003            ][fld002                             ]
 [lbl004            ][fld003                             ]
+[lbl005            ][fld004                             ]
 [wc001                                                  ]
 [                                                       ]
 [                                                       ]
@@ -18,11 +19,13 @@ ATTRIBUTES
 
    LABEL lbl001 = formonly.fieldLabel;
    LABEL lbl002: TEXT="Function:";
-   EDIT fld001 = formonly.funcName;
-   LABEL lbl003: TEXT="Parameter:";
-   EDIT fld002 = formonly.funcParam;
-   LABEL lbl004: TEXT="Result:";
-   EDIT fld003 = formonly.resultValue, NOENTRY;
+   COMBOBOX fld001 = formonly.funcName;
+   LABEL lbl003: TEXT="Param 1:";
+   EDIT fld002 = formonly.funcParam1;
+   LABEL lbl004: TEXT="Param 2:";
+   EDIT fld003 = formonly.funcParam2;
+   LABEL lbl005: TEXT="Result:";
+   EDIT fld004 = formonly.resultValue, NOENTRY;
    WEBCOMPONENT wc001 = formonly.wc, COMPONENTTYPE="wcdemo", STRETCH=BOTH;
 
 END --ATTRIBUTES

@@ -1,0 +1,13 @@
+<APPLICATION Parent="defaultwa"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="http://www.4js.com/ns/gas/6.00/cfextwa.xsd">
+  <DESCRIPTION>
+    <SHORT>Table Frontcall Demo</SHORT>
+    <LONG>Demonstrates table frontcalls: autoFitAllColumns, fitToViewAllColumns</LONG>
+  </DESCRIPTION>
+  <EXECUTION>
+    <ENVIRONMENT_VARIABLE Id="FGLRESOURCEPATH">/Volumes/SandiskSD/bdl-frontcall/source</ENVIRONMENT_VARIABLE>
+    <PATH>/Volumes/SandiskSD/bdl-frontcall/source</PATH>
+    <MODULE>TableFCDemo.42m</MODULE>
+  </EXECUTION>
+</APPLICATION>

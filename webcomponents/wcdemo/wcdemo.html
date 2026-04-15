@@ -17,18 +17,44 @@
             min-height: 30px;
         }
     </style>
-    <script>
-        // gICAPI interface for Genero web component communication
-        document.addEventListener("DOMContentLoaded", function() {
-            if (typeof gICAPI !== "undefined") {
-                gICAPI.SetFocus = function() {};
-                gICAPI.SetData = function(data) {
-                    document.getElementById("output").innerText = "Data: " + data;
-                };
-            }
-        });
+</head>
+<body>
+    <strong>Web Component Demo</strong>
+    <p>Functions: echo(msg), getTimestamp(), add(a,b), greet(name)</p>
+    <div id="output">Loading...</div>
 
-        // Functions callable via webcomponent.call frontcall
+    <script>
+        // ---------------------------------------------------------------
+        // Genero 6.x Web Component API
+        // GDC/GBC calls the GLOBAL function onICHostReady(version) once
+        // the host channel is established. All gICAPI callbacks must be
+        // assigned inside that function.
+        // ---------------------------------------------------------------
+
+        var onICHostReady = function(version) {
+
+            document.getElementById("output").innerText =
+                "Ready (API v" + version + ")";
+
+            // Called when the widget gains or loses focus
+            gICAPI.onFocus = function(polarity) {};
+
+            // Called when BDL assigns data to the WEBCOMPONENT field
+            gICAPI.onData = function(content) {
+                document.getElementById("output").innerText =
+                    "Data: " + content;
+            };
+
+            // Called to request the current field value back to BDL
+            gICAPI.onFlushData = function() {
+                gICAPI.SetData("");
+            };
+        };
+
+        // ---------------------------------------------------------------
+        // Functions callable via the  webcomponent.call  frontcall
+        // ---------------------------------------------------------------
+
         function echo(message) {
             document.getElementById("output").innerText = message;
             return message;
@@ -52,10 +78,5 @@
             return msg;
         }
     </script>
-</head>
-<body>
-    <strong>Web Component Demo</strong>
-    <p>Functions: echo(msg), getTimestamp(), add(a,b), greet(name)</p>
-    <div id="output">Ready</div>
 </body>
 </html>
