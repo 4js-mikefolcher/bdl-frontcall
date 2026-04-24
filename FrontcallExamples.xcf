@@ -6,9 +6,10 @@
     <LONG>Demonstrates all built-in Genero BDL frontcalls for GUI/Web</LONG>
   </DESCRIPTION>
   <EXECUTION>
-    <ENVIRONMENT_VARIABLE Id="FGLRESOURCEPATH">/Volumes/SandiskSD/bdl-frontcall/source</ENVIRONMENT_VARIABLE>
-    <PATH>/Volumes/SandiskSD/bdl-frontcall/source</PATH>
+    <ENVIRONMENT_VARIABLE Id="FGLRESOURCEPATH" Concat="APPEND">$(res.deployment.root)/source</ENVIRONMENT_VARIABLE>
+    <ENVIRONMENT_VARIABLE Id="FGLLDPATH" Concat="APPEND">$(res.deployment.root)$(res.path.separator)$(res.deployment.root)/source</ENVIRONMENT_VARIABLE>
+    <PATH>$(res.deployment.root)/source</PATH>
     <MODULE>FrontcallExamples.42m</MODULE>
-    <WEB_COMPONENT_DIRECTORY>/Volumes/SandiskSD/bdl-frontcall/webcomponents</WEB_COMPONENT_DIRECTORY>
+    <WEB_COMPONENT_DIRECTORY>$(res.deployment.root)/webcomponents</WEB_COMPONENT_DIRECTORY>
   </EXECUTION>
 </APPLICATION>

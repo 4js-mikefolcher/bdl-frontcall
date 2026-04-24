@@ -6,8 +6,9 @@
     <LONG>Demonstrates standard OS frontcalls: launchURL, feInfo, getEnv, openDir, openFile, openFiles, saveFile, playSound, execute, shellExec</LONG>
   </DESCRIPTION>
   <EXECUTION>
-    <ENVIRONMENT_VARIABLE Id="FGLRESOURCEPATH">/Volumes/SandiskSD/bdl-frontcall/source</ENVIRONMENT_VARIABLE>
-    <PATH>/Volumes/SandiskSD/bdl-frontcall/source</PATH>
+    <ENVIRONMENT_VARIABLE Id="FGLRESOURCEPATH" Concat="APPEND">$(res.deployment.root)/source</ENVIRONMENT_VARIABLE>
+    <ENVIRONMENT_VARIABLE Id="FGLLDPATH" Concat="APPEND">$(res.deployment.root)$(res.path.separator)$(res.deployment.root)/source</ENVIRONMENT_VARIABLE>
+    <PATH>$(res.deployment.root)/source</PATH>
     <MODULE>StandardOSDemo.42m</MODULE>
   </EXECUTION>
 </APPLICATION>

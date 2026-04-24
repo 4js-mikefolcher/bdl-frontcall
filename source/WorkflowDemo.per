@@ -1,0 +1,28 @@
+LAYOUT (TEXT="Workflow Library Demo")
+   GRID
+{
+[lbl001                                                                    ]
+[lbl002      ][fld001                                   ][btn001           ]
+[lbl003      ][fld002                                                      ]
+[lbl004      ][fld003                                                      ]
+[lbl005                                                                    ]
+[txt001                                                                    ]
+[                                                                          ]
+}
+   END --GRID
+END --LAYOUT
+
+ATTRIBUTES
+
+   LABEL    lbl001 = formonly.fieldLabel;
+   LABEL    lbl002: TEXT="Action:";
+   COMBOBOX fld001 = formonly.action;
+   BUTTON   btn001: execute, TEXT="Execute", IMAGE="fa-play";
+   LABEL    lbl003: TEXT="Server File Path:";
+   EDIT     fld002 = formonly.serverPath;
+   LABEL    lbl004: TEXT="Client Subdir (optional):";
+   EDIT     fld003 = formonly.clientSubdir;
+   LABEL    lbl005: TEXT="Result:";
+   TEXTEDIT txt001 = formonly.result, NOENTRY, STRETCH=BOTH;
+
+END --ATTRIBUTES

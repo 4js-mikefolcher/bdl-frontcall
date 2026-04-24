@@ -12,24 +12,36 @@ names, attributes, and syntax that do not exist.
 
 **Rules:**
 
-1. ALWAYS call `searchSkills` or `getSkill` before writing any Genero
-   BDL code. Never answer Genero API questions from memory alone.
-2. At the start of each session, call `getSkill("fourjs-skill-index")`
-   to load the routing table that maps topics to skills.
-3. If no skill covers the topic, say so. Do not guess. Offer to search
-   the documentation with `searchDocs` instead.
-4. After consulting a skill, check `fourjs-common-pitfalls` if the task
-   involves SQL, forms, arrays, strings, or dialog programming.
+1. At the start of each session, call
+   `getSkill("fourjs-skill-index")` **once**. This loads the routing
+   table mapping topics to skills and their key sections. It stays
+   valid for the entire conversation.
+2. For every Genero question, route through the skill-index first.
+   If a topic matches a row, call
+   `getSkillSection(<skill-id>, <section-id>)` directly — sections
+   are 5–10× smaller than full skills.
+3. If no row matches, call `searchSkills(<keywords>)`. Load the top
+   hit's matched section.
+4. If skills don't cover the topic, say so. Fall back to `searchDocs`
+   / `readDoc`. **Never** fall back to training data.
+5. **Do NOT call `listSkills` for routing.** It is an admin
+   enumeration tool that returns only `{id, name, category}` and
+   cannot tell you which skill covers a topic. Use the skill-index
+   or `searchSkills` instead.
+6. When the task touches SQL, forms, arrays, dialogs, or strings,
+   also load `fourjs-common-pitfalls`.
 
 ## Skill Tools (Primary Source)
 
 | Tool | When to Use |
 |------|-------------|
-| `searchSkills` | Unsure which skill has the answer |
-| `getSkill` | Know which skill you need |
-| `getSkillSection` | Need one specific topic from a large skill |
-| `getSkillBundle` | Task spans multiple topics |
-| `listSkills` | Discover available skills |
+| `getSkill("fourjs-skill-index")` | **Session-start ritual.** Once per session. |
+| `searchSkills` | Topic not obvious in the index — fuzzy routing. |
+| `getSkillSections` | List sections in a named skill before loading. |
+| `getSkillSection` | **Default content-load tool.** Use when you know the section. |
+| `getSkill` | Load a full skill (only when the whole skill is needed). |
+| `getSkillBundle` | Task genuinely spans multiple skills. |
+| `listSkills` | Admin/debugging only — not for routing. |
 
 ## Documentation Tools (Secondary Source)
 
@@ -65,4 +77,3 @@ fglcomp -M -Wall program.4gl    # Compile with warnings to stdout
 fglform -M form.per             # Compile form
 FGLGUI=0 TERM=xterm fglrun program.42m  # Run in terminal mode
 ```
-

@@ -1,14 +1,12 @@
 IMPORT util
+IMPORT FGL com.fourjs.fclib.OSLib
+IMPORT FGL com.fourjs.fclib.FrontCallLib
 
 #
 # FileDemo.4gl
 #
-# Standalone demo for file handling frontcalls:
-#   standard.openDir   - directory picker dialog
-#   standard.openFile  - single file picker dialog
-#   standard.openFiles - multi-file picker dialog
-#   standard.saveFile  - save-file dialog
-#   standard.playSound - play an audio file on the frontend
+# Standalone demo for file handling frontcalls via OSLib — no inline
+# ui.Interface.frontCall in this module.
 #
 
 MAIN
@@ -29,7 +27,6 @@ MAIN
 
       ON CHANGE action
          CALL showHint(action)
-         # Set sensible default wildcards for the selected action
          CASE action
             WHEN "openFile"
                LET inputText = "*.* *.txt *.pdf *.jpg *.png"
@@ -63,7 +60,6 @@ MAIN
 
 END MAIN
 
-# ---------------------------------------------------------------------------
 PRIVATE FUNCTION setupCombo() RETURNS ()
    DEFINE combo ui.ComboBox
    LET combo = ui.ComboBox.forName("formonly.action")
@@ -76,7 +72,6 @@ PRIVATE FUNCTION setupCombo() RETURNS ()
    END IF
 END FUNCTION
 
-# ---------------------------------------------------------------------------
 PRIVATE FUNCTION showHint(action STRING) RETURNS ()
    DEFINE hint STRING
    CASE action
@@ -96,100 +91,60 @@ PRIVATE FUNCTION showHint(action STRING) RETURNS ()
    DISPLAY hint TO formonly.fieldLabel
 END FUNCTION
 
-# ---------------------------------------------------------------------------
 PRIVATE FUNCTION executeAction(action STRING, inputText STRING) RETURNS ()
-   DEFINE result    STRING
-   DEFINE soundFile STRING
-   DEFINE files     DYNAMIC ARRAY OF STRING
-   DEFINE idx       INTEGER
+   DEFINE r FrontCallLib.t_result
+   DEFINE sR OSLib.t_osStringResult
+   DEFINE fR OSLib.t_osFilesResult
+   DEFINE result STRING
+   DEFINE files DYNAMIC ARRAY OF STRING
+   DEFINE idx INTEGER
    DEFINE wildcards STRING
 
    LET wildcards = IIF(inputText IS NULL OR inputText.trimRight() = "", "*.*", inputText)
 
-   TRY
-      CASE action
+   CASE action
 
-         WHEN "openDir"
-            CALL ui.Interface.frontCall(
-               "standard", "openDir",
-               ["", "Select a Directory"],
-               [result]
-            )
-            IF result IS NULL THEN
-               LET result = "(cancelled)"
-            ELSE
-               LET result = SFMT("Directory selected:\n%1", result)
-            END IF
+      WHEN "openDir"
+         LET sR = OSLib.openDir("", "Select a Directory")
+         LET result = sR.message
 
-         WHEN "openFile"
-            CALL ui.Interface.frontCall(
-               "standard", "openFile",
-               ["", "Files", wildcards, "Select a File"],
-               [result]
-            )
-            IF result IS NULL THEN
-               LET result = "(cancelled)"
-            ELSE
-               LET result = SFMT("File selected:\n%1", result)
-            END IF
+      WHEN "openFile"
+         LET sR = OSLib.openFile("", "Files", wildcards, "Select a File")
+         LET result = sR.message
 
-         WHEN "openFiles"
-            CALL ui.Interface.frontCall(
-               "standard", "openFiles",
-               ["", "Files", wildcards, "Select Files"],
-               [result]
-            )
-            IF result IS NULL OR result = "[]" THEN
-               LET result = "(cancelled or no files selected)"
-            ELSE
-               # Parse the JSON array of file paths
-               TRY
-                  CALL util.JSON.parse(result, files)
-                  LET result = SFMT("Selected %1 file(s):\n", files.getLength())
-                  FOR idx = 1 TO files.getLength()
-                     LET result = result, SFMT("  [%1] %2\n", idx, files[idx])
-                  END FOR
-               CATCH
-                  LET result = SFMT("Files (raw):\n%1", result)
-               END TRY
-            END IF
+      WHEN "openFiles"
+         LET fR = OSLib.openFiles("", "Files", wildcards, "Select Files")
+         IF NOT fR.success OR fR.files IS NULL OR fR.files = "[]" THEN
+            LET result = fR.message
+         ELSE
+            TRY
+               CALL util.JSON.parse(fR.files, files)
+               LET result = SFMT("Selected %1 file(s):\n", files.getLength())
+               FOR idx = 1 TO files.getLength()
+                  LET result = result, SFMT("  [%1] %2\n", idx, files[idx])
+               END FOR
+            CATCH
+               LET result = SFMT("Files (raw):\n%1", fR.files)
+            END TRY
+         END IF
 
-         WHEN "saveFile"
-            CALL ui.Interface.frontCall(
-               "standard", "saveFile",
-               ["", "Files", wildcards, "Save File As"],
-               [result]
-            )
-            IF result IS NULL THEN
-               LET result = "(cancelled)"
-            ELSE
-               LET result = SFMT("Save path selected:\n%1", result)
-            END IF
+      WHEN "saveFile"
+         LET sR = OSLib.saveFile("", "Files", wildcards, "Save File As")
+         LET result = sR.message
 
-         WHEN "playSound"
-            # First let the user pick a sound file, then play it
-            CALL ui.Interface.frontCall(
-               "standard", "openFile",
-               ["", "Audio files", wildcards, "Select a Sound File"],
-               [soundFile]
-            )
-            IF soundFile IS NULL THEN
-               LET result = "(cancelled — no sound file selected)"
-            ELSE
-               CALL ui.Interface.frontCall(
-                  "standard", "playSound",
-                  [soundFile, TRUE], []
-               )
-               LET result = SFMT("Played sound file:\n%1", soundFile)
-            END IF
+      WHEN "playSound"
+         LET sR = OSLib.openFile("", "Audio files", wildcards, "Select a Sound File")
+         IF NOT sR.success OR sR.value IS NULL THEN
+            LET result = sR.message
+         ELSE
+            LET r = OSLib.playSound(sR.value, TRUE)
+            LET result = SFMT("%1\n%2", sR.message, r.message)
+         END IF
 
-         OTHERWISE
-            LET result = SFMT("Unknown action: %1", action)
+      OTHERWISE
+         LET result = SFMT("Unknown action: %1", action)
 
-      END CASE
-   CATCH
-      LET result = SFMT("Error %1: %2", STATUS, err_get(STATUS))
-   END TRY
+   END CASE
 
    DISPLAY result TO formonly.result
    MESSAGE SFMT("[%1] => done", action)

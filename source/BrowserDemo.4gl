@@ -1,10 +1,13 @@
 #
 # BrowserDemo.4gl
 #
-# Standalone demo for browser frontcalls:
-#   browser.setApplicationState  - set URL anchor (GBC only)
-#   browser.getApplicationState  - read URL anchor (GBC only)
+# Standalone demo for browser frontcalls (GBC only):
+#   browser.setApplicationState  - set URL anchor
+#   browser.getApplicationState  - read URL anchor
 #
+
+IMPORT FGL com.fourjs.fclib.BrowserLib
+IMPORT FGL com.fourjs.fclib.FrontCallLib
 
 MAIN
    DEFINE action    STRING
@@ -45,7 +48,6 @@ MAIN
 
 END MAIN
 
-# ---------------------------------------------------------------------------
 PRIVATE FUNCTION setupCombo() RETURNS ()
    DEFINE combo ui.ComboBox
    LET combo = ui.ComboBox.forName("formonly.action")
@@ -55,7 +57,6 @@ PRIVATE FUNCTION setupCombo() RETURNS ()
    END IF
 END FUNCTION
 
-# ---------------------------------------------------------------------------
 PRIVATE FUNCTION showHint(action STRING) RETURNS ()
    DEFINE hint STRING
    CASE action
@@ -69,42 +70,29 @@ PRIVATE FUNCTION showHint(action STRING) RETURNS ()
    DISPLAY hint TO formonly.fieldLabel
 END FUNCTION
 
-# ---------------------------------------------------------------------------
 PRIVATE FUNCTION executeAction(action STRING, inputText STRING) RETURNS ()
+   DEFINE r FrontCallLib.t_result
+   DEFINE getR BrowserLib.t_bwGetResult
    DEFINE result STRING
 
-   TRY
-      CASE action
+   CASE action
 
-         WHEN "setApplicationState"
-            IF inputText IS NULL OR inputText.trimRight() = "" THEN
-               ERROR "Enter an anchor value in the Anchor Value field"
-               RETURN
-            END IF
-            CALL ui.Interface.frontCall(
-               "browser", "setApplicationState",
-               [inputText], []
-            )
-            LET result = SFMT("Anchor set to: #%1", inputText)
+      WHEN "setApplicationState"
+         IF inputText IS NULL OR inputText.trimRight() = "" THEN
+            ERROR "Enter an anchor value in the Anchor Value field"
+            RETURN
+         END IF
+         LET r = BrowserLib.setAppState(inputText)
+         LET result = r.message
 
-         WHEN "getApplicationState"
-            CALL ui.Interface.frontCall(
-               "browser", "getApplicationState",
-               [], [result]
-            )
-            IF result IS NULL THEN
-               LET result = "(no anchor set)"
-            ELSE
-               LET result = SFMT("Current anchor: #%1", result)
-            END IF
+      WHEN "getApplicationState"
+         LET getR = BrowserLib.getAppState()
+         LET result = getR.message
 
-         OTHERWISE
-            LET result = SFMT("Unknown action: %1", action)
+      OTHERWISE
+         LET result = SFMT("Unknown action: %1", action)
 
-      END CASE
-   CATCH
-      LET result = SFMT("Error %1: %2", STATUS, err_get(STATUS))
-   END TRY
+   END CASE
 
    DISPLAY result TO formonly.result
    MESSAGE SFMT("[%1] => %2", action, result)

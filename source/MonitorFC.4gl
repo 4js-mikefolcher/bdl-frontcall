@@ -1,7 +1,11 @@
+IMPORT FGL com.fourjs.fclib.MonitorLib
+IMPORT FGL com.fourjs.fclib.OSLib
+IMPORT FGL com.fourjs.fclib.FrontCallLib
+
 PUBLIC FUNCTION monitorUpdate() RETURNS ()
    DEFINE updatePath STRING
    DEFINE warningText STRING
-   DEFINE result STRING
+   DEFINE r FrontCallLib.t_result
 
    CALL openWindow("MonitorUpdate", "GDC Monitor Update")
 
@@ -13,23 +17,18 @@ PUBLIC FUNCTION monitorUpdate() RETURNS ()
       ON ACTION CANCEL
          EXIT INPUT
       ON ACTION zoom
-         CALL getUpdateFile() RETURNING updatePath
+         CALL pickFile() RETURNING updatePath
       AFTER INPUT
          IF updatePath IS NULL THEN
             ERROR "Update file path is required"
             CONTINUE INPUT
          END IF
-         TRY
-            CALL ui.Interface.frontCall(
-               "monitor",
-               "update",
-               [updatePath, warningText],
-               [result]
-            )
-            MESSAGE SFMT("monitor.update result: %1", result)
-         CATCH
-            ERROR SFMT("Error: %1", err_get(status))
-         END TRY
+         LET r = MonitorLib.update(updatePath, warningText, FALSE)
+         IF r.success THEN
+            MESSAGE r.message
+         ELSE
+            ERROR r.message
+         END IF
          CONTINUE INPUT
    END INPUT
 
@@ -38,19 +37,17 @@ PUBLIC FUNCTION monitorUpdate() RETURNS ()
 
 END FUNCTION #monitorUpdate
 
-PRIVATE FUNCTION getUpdateFile() RETURNS STRING
-   DEFINE filePath STRING
+PRIVATE FUNCTION pickFile() RETURNS STRING
+   DEFINE r OSLib.t_osStringResult
 
-   CALL ui.Interface.frontCall(
-      "standard",
-      "openFile",
-      ["", "Update File", "*.*", "Select GDC Update File"],
-      [filePath]
-   )
+   LET r = OSLib.openFile("", "Update File", "*.*", "Select GDC Update File")
+   IF NOT r.success THEN
+      ERROR r.message
+      RETURN NULL
+   END IF
+   RETURN r.value
 
-   RETURN filePath
-
-END FUNCTION #getUpdateFile
+END FUNCTION #pickFile
 
 PRIVATE FUNCTION openWindow(formName STRING, formTitle STRING) RETURNS ()
 

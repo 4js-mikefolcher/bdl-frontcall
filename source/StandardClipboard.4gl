@@ -1,6 +1,9 @@
+IMPORT FGL com.fourjs.fclib.ClipboardLib
+IMPORT FGL com.fourjs.fclib.FrontCallLib
+
 PUBLIC FUNCTION clipboardAdd() RETURNS ()
    DEFINE cbText STRING
-   DEFINE resultStatus BOOLEAN
+   DEFINE r FrontCallLib.t_result
 
    CALL openWindow("Add to Clipboard")
 
@@ -15,16 +18,11 @@ PUBLIC FUNCTION clipboardAdd() RETURNS ()
             ERROR "You need to enter text to copy to the clipboard"
             CONTINUE INPUT
          END IF
-         CALL ui.Interface.frontCall(
-            "standard",
-            "cbAdd",
-            [cbText],
-            [resultStatus]
-         )
-         IF resultStatus THEN
-            MESSAGE "Text has been added to the clipboard"
+         LET r = ClipboardLib.add(cbText)
+         IF r.success THEN
+            MESSAGE r.message
          ELSE
-            ERROR "Add to clipboard failed"
+            ERROR r.message
             CONTINUE INPUT
          END IF
    END INPUT
@@ -35,24 +33,12 @@ PUBLIC FUNCTION clipboardAdd() RETURNS ()
 END FUNCTION #clipboardAdd
 
 PUBLIC FUNCTION clipboardClear() RETURNS ()
-   DEFINE resultStatus BOOLEAN
-   DEFINE messageText STRING
+   DEFINE r FrontCallLib.t_result
 
-   CALL ui.Interface.frontCall(
-      "standard",
-      "cbClear",
-      [],
-      [resultStatus]
-   )
-
-   IF resultStatus THEN
-      LET messageText = "The clipboard has been cleared"
-   ELSE
-      LET messageText = "The clipboard could NOT be cleared"
-   END IF
+   LET r = ClipboardLib.clear()
 
    MENU "Clipboard Clear"
-      ATTRIBUTES(STYLE="dialog", COMMENT=messageText)
+      ATTRIBUTES(STYLE="dialog", COMMENT=r.message)
       COMMAND "Okay"
          EXIT MENU
    END MENU
@@ -60,19 +46,19 @@ PUBLIC FUNCTION clipboardClear() RETURNS ()
 END FUNCTION #clipboardClear
 
 PUBLIC FUNCTION clipboardGet() RETURNS ()
-   DEFINE cbText STRING
+   DEFINE r ClipboardLib.t_cbGetResult
 
    CALL openWindow("Get Clipboard Content")
 
-   CALL ui.Interface.frontCall(
-      "standard",
-      "cbGet",
-      [],
-      [cbText]
-   )
+   LET r = ClipboardLib.get()
 
-   DISPLAY "Below is the text in the clipboard" TO formonly.cbMessage
-   DISPLAY cbText TO formonly.cbText
+   IF r.success THEN
+      DISPLAY "Below is the text in the clipboard" TO formonly.cbMessage
+      DISPLAY r.text TO formonly.cbText
+   ELSE
+      DISPLAY r.message TO formonly.cbMessage
+      DISPLAY "" TO formonly.cbText
+   END IF
 
    MENU
       COMMAND "OK"
@@ -85,7 +71,7 @@ END FUNCTION #clipboardGet
 
 PUBLIC FUNCTION clipboardPaste() RETURNS ()
    DEFINE cbText STRING
-   DEFINE resultStatus BOOLEAN
+   DEFINE r FrontCallLib.t_result
 
    CALL openWindow("Paste from Clipboard")
 
@@ -96,16 +82,11 @@ PUBLIC FUNCTION clipboardPaste() RETURNS ()
       ON ACTION CANCEL
          EXIT INPUT
       ON ACTION paste ATTRIBUTES (TEXT="Paste")
-         CALL ui.Interface.frontCall(
-            "standard",
-            "cbPaste",
-            [],
-            [resultStatus]
-         )
-         IF resultStatus THEN
-            MESSAGE "Text pasted successfully"
+         LET r = ClipboardLib.paste()
+         IF r.success THEN
+            MESSAGE r.message
          ELSE
-            ERROR "An error occurred attempting to paste the clipboard contents"
+            ERROR r.message
          END IF
    END INPUT
 
@@ -116,7 +97,7 @@ END FUNCTION #clipboardPaste
 
 PUBLIC FUNCTION clipboardSet() RETURNS ()
    DEFINE cbText STRING
-   DEFINE resultStatus BOOLEAN
+   DEFINE r FrontCallLib.t_result
 
    CALL openWindow("Set Clipboard Content")
 
@@ -131,16 +112,11 @@ PUBLIC FUNCTION clipboardSet() RETURNS ()
             ERROR "You need to enter text to copy to the clipboard"
             CONTINUE INPUT
          END IF
-         CALL ui.Interface.frontCall(
-            "standard",
-            "cbSet",
-            [cbText],
-            [resultStatus]
-         )
-         IF resultStatus THEN
-            MESSAGE "Text has been copied to the clipboard"
+         LET r = ClipboardLib.set(cbText)
+         IF r.success THEN
+            MESSAGE r.message
          ELSE
-            ERROR "Copy to clipboard failed"
+            ERROR r.message
             CONTINUE INPUT
          END IF
    END INPUT

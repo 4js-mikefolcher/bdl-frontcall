@@ -1,18 +1,12 @@
 #
 # StandardOSDemo.4gl
 #
-# Standalone demo for standard OS/file frontcalls:
-#   standard.launchURL  - open URL in system browser
-#   standard.feInfo     - query a frontend property
-#   standard.getEnv     - read a frontend environment variable
-#   standard.openDir    - frontend directory picker dialog
-#   standard.openFile   - frontend single-file picker dialog
-#   standard.openFiles  - frontend multi-file picker dialog
-#   standard.saveFile   - frontend save-file dialog
-#   standard.playSound  - play an audio file on the frontend
-#   standard.execute    - run a program on the frontend (GDC only)
-#   standard.shellExec  - open a file with its associated program (GDC only)
+# Standalone demo for standard OS/file frontcalls, all going through
+# OSLib now — this module contains no inline ui.Interface.frontCall.
 #
+
+IMPORT FGL com.fourjs.fclib.OSLib
+IMPORT FGL com.fourjs.fclib.FrontCallLib
 
 MAIN
    DEFINE action    STRING
@@ -56,7 +50,6 @@ MAIN
 
 END MAIN
 
-# ---------------------------------------------------------------------------
 PRIVATE FUNCTION setupCombo() RETURNS ()
    DEFINE combo ui.ComboBox
    LET combo = ui.ComboBox.forName("formonly.action")
@@ -74,7 +67,6 @@ PRIVATE FUNCTION setupCombo() RETURNS ()
    END IF
 END FUNCTION
 
-# ---------------------------------------------------------------------------
 PRIVATE FUNCTION showHint(action STRING) RETURNS ()
    DEFINE hint STRING
    CASE action
@@ -83,7 +75,7 @@ PRIVATE FUNCTION showHint(action STRING) RETURNS ()
       WHEN "feInfo"
          LET hint = "Input: property name (browserName | osType | osVersion | screenResolution | feName | ip | windowSize | target | ppi | numScreens | userPreferredLang | colorScheme | deviceId | deviceModel | fePath | dataDirectory | freeStorageSpace) — press Execute"
       WHEN "getEnv"
-         LET hint = "Input: frontend environment variable name (e.g. PATH, HOME) — press Execute"
+         LET hint = "Input: frontend environment variable name (e.g. PATH, HOME) — press Execute (GDC only)"
       WHEN "openDir"
          LET hint = "No input needed — press Execute to open a directory picker dialog"
       WHEN "openFile"
@@ -104,128 +96,83 @@ PRIVATE FUNCTION showHint(action STRING) RETURNS ()
    DISPLAY hint TO formonly.fieldLabel
 END FUNCTION
 
-# ---------------------------------------------------------------------------
 PRIVATE FUNCTION executeAction(action STRING, inputText STRING) RETURNS ()
-   DEFINE result    STRING
-   DEFINE bResult   BOOLEAN
-   DEFINE wildcards DYNAMIC ARRAY OF STRING
+   DEFINE r FrontCallLib.t_result
+   DEFINE sR OSLib.t_osStringResult
+   DEFINE fR OSLib.t_osFilesResult
+   DEFINE result STRING
 
-   CALL wildcards.clear()
-   LET wildcards[1] = "*.*"
+   CASE action
 
-   TRY
-      CASE action
+      WHEN "launchURL"
+         IF inputText IS NULL OR inputText.trimRight() = "" THEN
+            ERROR "Enter a URL in the Input field"
+            RETURN
+         END IF
+         LET r = OSLib.launchURL(inputText)
+         LET result = r.message
 
-         WHEN "launchURL"
-            IF inputText IS NULL OR inputText.trimRight() = "" THEN
-               ERROR "Enter a URL in the Input field"
-               RETURN
-            END IF
-            CALL ui.Interface.frontCall(
-               "standard", "launchURL",
-               [inputText], []
-            )
-            LET result = SFMT("Launched URL: %1", inputText)
+      WHEN "feInfo"
+         IF inputText IS NULL OR inputText.trimRight() = "" THEN
+            ERROR "Enter a frontend property name in the Input field"
+            RETURN
+         END IF
+         LET sR = OSLib.feInfo(inputText)
+         LET result = sR.message
 
-         WHEN "feInfo"
-            IF inputText IS NULL OR inputText.trimRight() = "" THEN
-               ERROR "Enter a frontend property name in the Input field"
-               RETURN
-            END IF
-            CALL ui.Interface.frontCall(
-               "standard", "feInfo",
-               [inputText], [result]
-            )
-            LET result = SFMT("%1 = %2", inputText, result)
+      WHEN "getEnv"
+         IF inputText IS NULL OR inputText.trimRight() = "" THEN
+            ERROR "Enter an environment variable name in the Input field"
+            RETURN
+         END IF
+         LET sR = OSLib.getEnv(inputText)
+         LET result = sR.message
 
-         WHEN "getEnv"
-            IF inputText IS NULL OR inputText.trimRight() = "" THEN
-               ERROR "Enter an environment variable name in the Input field"
-               RETURN
-            END IF
-            CALL ui.Interface.frontCall(
-               "standard", "getEnv",
-               [inputText], [result]
-            )
-            LET result = SFMT("%1 = %2", inputText, IIF(result IS NULL, "(not set)", result))
+      WHEN "openDir"
+         LET sR = OSLib.openDir("", "Select a Directory")
+         LET result = sR.message
 
-         WHEN "openDir"
-            CALL ui.Interface.frontCall(
-               "standard", "openDir",
-               ["", "Select a Directory"],
-               [result]
-            )
-            IF result IS NULL THEN LET result = "(cancelled)" END IF
+      WHEN "openFile"
+         LET sR = OSLib.openFile("", "File", "*.*", "Select a File")
+         LET result = sR.message
 
-         WHEN "openFile"
-            CALL ui.Interface.frontCall(
-               "standard", "openFile",
-               ["", "File", "*.*", "Select a File"],
-               [result]
-            )
-            IF result IS NULL THEN LET result = "(cancelled)" END IF
+      WHEN "openFiles"
+         LET fR = OSLib.openFiles("", "File", "*.*", "Select Files")
+         LET result = IIF(fR.success AND fR.files IS NOT NULL AND fR.files != "[]",
+            SFMT("Files (raw JSON):\n%1", fR.files), fR.message)
 
-         WHEN "openFiles"
-            CALL ui.Interface.frontCall(
-               "standard", "openFiles",
-               ["", "File", "*.*", "Select Files"],
-               [result]
-            )
-            IF result IS NULL THEN LET result = "(cancelled)" END IF
+      WHEN "saveFile"
+         LET sR = OSLib.saveFile("", "File", "*.*", "Save File As")
+         LET result = sR.message
 
-         WHEN "saveFile"
-            CALL ui.Interface.frontCall(
-               "standard", "saveFile",
-               ["", "File", "*.*", "Save File As"],
-               [result]
-            )
-            IF result IS NULL THEN LET result = "(cancelled)" END IF
+      WHEN "playSound"
+         IF inputText IS NULL OR inputText.trimRight() = "" THEN
+            ERROR "Enter the path to an audio file in the Input field"
+            RETURN
+         END IF
+         LET r = OSLib.playSound(inputText, FALSE)
+         LET result = r.message
 
-         WHEN "playSound"
-            IF inputText IS NULL OR inputText.trimRight() = "" THEN
-               ERROR "Enter the path to an audio file in the Input field"
-               RETURN
-            END IF
-            CALL ui.Interface.frontCall(
-               "standard", "playSound",
-               [inputText], []
-            )
-            LET result = SFMT("Playing: %1", inputText)
+      WHEN "execute"
+         IF inputText IS NULL OR inputText.trimRight() = "" THEN
+            ERROR "Enter the program path in the Input field (GDC only)"
+            RETURN
+         END IF
+         LET r = OSLib.execute(inputText, TRUE)
+         LET result = r.message
 
-         WHEN "execute"
-            IF inputText IS NULL OR inputText.trimRight() = "" THEN
-               ERROR "Enter the program path in the Input field (GDC only)"
-               RETURN
-            END IF
-            CALL ui.Interface.frontCall(
-               "standard", "execute",
-               [inputText, TRUE],
-               [bResult]
-            )
-            LET result = IIF(bResult,
-               SFMT("Executed: %1", inputText),
-               SFMT("execute returned FALSE for: %1", inputText))
+      WHEN "shellExec"
+         IF inputText IS NULL OR inputText.trimRight() = "" THEN
+            ERROR "Enter the file path in the Input field (GDC only)"
+            RETURN
+         END IF
+         LET r = OSLib.shellExec(inputText)
+         LET result = r.message
 
-         WHEN "shellExec"
-            IF inputText IS NULL OR inputText.trimRight() = "" THEN
-               ERROR "Enter the file path in the Input field (GDC only)"
-               RETURN
-            END IF
-            CALL ui.Interface.frontCall(
-               "standard", "shellExec",
-               [inputText], [bResult]
-            )
-            LET result = IIF(bResult,
-               SFMT("shellExec: %1", inputText),
-               SFMT("shellExec returned FALSE for: %1", inputText))
+      OTHERWISE
+         LET result = SFMT("Unknown action: %1", action)
 
-         OTHERWISE
-            LET result = SFMT("Unknown action: %1", action)
-
-      END CASE
-   CATCH
-      LET result = SFMT("Error %1: %2", STATUS, err_get(STATUS))
-   END TRY
+   END CASE
 
    DISPLAY result TO formonly.result
    MESSAGE SFMT("[%1] => %2", action, result)

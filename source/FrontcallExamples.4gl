@@ -9,12 +9,12 @@ IMPORT FGL TableFC
 IMPORT FGL WebComponentFC
 IMPORT FGL MonitorFC
 
-TYPE t_frontcall RECORD
+PRIVATE TYPE t_frontcall RECORD
    fcName STRING,
    fcFrontend STRING
 END RECORD
 
-DEFINE fcList DYNAMIC ARRAY OF t_frontcall
+PRIVATE DEFINE fcList DYNAMIC ARRAY OF t_frontcall
 
 MAIN
    DEFINE currIdx INTEGER

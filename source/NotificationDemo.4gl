@@ -1,11 +1,12 @@
 #
 # NotificationDemo.4gl
 #
-# Standalone demo for standard notification frontcalls:
-#   standard.createNotification           - send a system notification
-#   standard.clearNotifications           - dismiss all notifications
-#   standard.getLastNotificationInteractions - query last user interactions
+# Standalone demo for standard notification frontcalls via NotificationLib
+# — no inline ui.Interface.frontCall in this module.
 #
+
+IMPORT FGL com.fourjs.fclib.NotificationLib
+IMPORT FGL com.fourjs.fclib.FrontCallLib
 
 MAIN
    DEFINE action       STRING
@@ -47,7 +48,6 @@ MAIN
 
 END MAIN
 
-# ---------------------------------------------------------------------------
 PRIVATE FUNCTION setupCombo() RETURNS ()
    DEFINE combo ui.ComboBox
    LET combo = ui.ComboBox.forName("formonly.action")
@@ -58,97 +58,68 @@ PRIVATE FUNCTION setupCombo() RETURNS ()
    END IF
 END FUNCTION
 
-# ---------------------------------------------------------------------------
 PRIVATE FUNCTION showHint(action STRING) RETURNS ()
    DEFINE hint STRING
    CASE action
       WHEN "createNotification"
-         LET hint = "GBC only: Enter Title and Content, then Execute to send a browser notification"
+         LET hint = "Enter Title and Content, then Execute to send a system notification"
       WHEN "clearNotifications"
-         LET hint = "GBC only: Press Execute to dismiss all active notifications (no input needed)"
+         LET hint = "Press Execute to dismiss all active notifications (no input needed)"
       WHEN "getLastNotificationInteractions"
-         LET hint = "GBC only: Press Execute to retrieve the last notification interactions (no input needed)"
+         LET hint = "Press Execute to retrieve the last notification interactions (no input needed)"
       OTHERWISE
          LET hint = "Select a notification frontcall action and press Execute"
    END CASE
    DISPLAY hint TO formonly.fieldLabel
 END FUNCTION
 
-# ---------------------------------------------------------------------------
 PRIVATE FUNCTION executeAction(action STRING, notifTitle STRING, notifContent STRING) RETURNS ()
-   DEFINE result   STRING
-   DEFINE notifId  INTEGER
-   DEFINE ret      STRING
-
-   TYPE t_nl DYNAMIC ARRAY OF RECORD
-      id   STRING,
-      type STRING
-   END RECORD
-   DEFINE nl  t_nl
+   DEFINE r FrontCallLib.t_result
+   DEFINE createR NotificationLib.t_nfCreateResult
+   DEFINE intR NotificationLib.t_nfInteractionsResult
+   DEFINE options NotificationLib.t_nfOptions
+   DEFINE result STRING
    DEFINE idx INTEGER
 
-   DEFINE options RECORD
-      id      INTEGER,
-      title   STRING,
-      content STRING,
-      icon    STRING
-   END RECORD
+   CASE action
 
-   TRY
-      CASE action
+      WHEN "createNotification"
+         IF notifTitle IS NULL OR notifTitle.trimRight() = "" THEN
+            ERROR "Enter a notification Title first"
+            RETURN
+         END IF
+         LET options.id = 1
+         LET options.title = notifTitle
+         LET options.content = IIF(notifContent IS NULL, "", notifContent)
+         LET options.icon = ""
+         LET createR = NotificationLib.createNotification(options)
+         LET result = createR.message
 
-         WHEN "createNotification"
-            IF notifTitle IS NULL OR notifTitle.trimRight() = "" THEN
-               ERROR "Enter a notification Title first"
-               RETURN
-            END IF
-            LET options.id      = 1
-            LET options.title   = notifTitle
-            LET options.content = IIF(notifContent IS NULL, "", notifContent)
-            LET options.icon    = ""
-            CALL ui.Interface.frontCall(
-               "standard", "createNotification",
-               [options], [notifId]
-            )
-            IF notifId IS NOT NULL AND notifId > 0 THEN
-               LET result = SFMT("Notification created with ID: %1\nCheck your system notification area / Action Center.", notifId)
-            ELSE
-               LET result = SFMT("createNotification returned ID=%1\n(Check Windows notification settings if not visible)", notifId)
-            END IF
+      WHEN "clearNotifications"
+         LET r = NotificationLib.clearNotifications("")
+         LET result = r.message
 
-         WHEN "clearNotifications"
-            CALL ui.Interface.frontCall(
-               "standard", "clearNotifications",
-               [""], [ret]
-            )
-            LET result = SFMT("clearNotifications returned: %1", IIF(ret IS NULL, "(null)", ret))
-
-         WHEN "getLastNotificationInteractions"
-            CALL ui.Interface.frontCall(
-               "standard", "getLastNotificationInteractions",
-               [], [nl]
-            )
-            IF nl.getLength() = 0 THEN
+      WHEN "getLastNotificationInteractions"
+         LET intR = NotificationLib.getLastNotificationInteractions()
+         IF NOT intR.success THEN
+            LET result = intR.message
+         ELSE
+            IF intR.interactions.getLength() = 0 THEN
                LET result = "No notification interactions found"
             ELSE
-               LET result = SFMT("Found %1 interaction(s):\n", nl.getLength())
-               FOR idx = 1 TO nl.getLength()
+               LET result = SFMT("Found %1 interaction(s):\n", intR.interactions.getLength())
+               FOR idx = 1 TO intR.interactions.getLength()
                   LET result = result,
-                     SFMT("  [%1] ID: %2  Type: %3\n", idx, nl[idx].id, nl[idx].type)
+                     SFMT("  [%1] ID: %2  Type: %3\n", idx,
+                        intR.interactions[idx].id, intR.interactions[idx].type)
                END FOR
             END IF
+         END IF
 
-         OTHERWISE
-            LET result = SFMT("Unknown action: %1", action)
+      OTHERWISE
+         LET result = SFMT("Unknown action: %1", action)
 
-      END CASE
-   CATCH
-      IF STATUS = -6332 THEN
-         LET result = SFMT("Not supported in GDC (Error %1).\nAll notification frontcalls require GBC (browser client).\nRun via: http://localhost:6394/ua/r/NotificationDemo", STATUS)
-      ELSE
-         LET result = SFMT("Error %1: %2", STATUS, err_get(STATUS))
-      END IF
-   END TRY
+   END CASE
 
    DISPLAY result TO formonly.result
    MESSAGE SFMT("[%1] => %2", action, result)

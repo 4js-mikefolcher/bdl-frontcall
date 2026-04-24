@@ -1,10 +1,13 @@
+IMPORT FGL com.fourjs.fclib.MiscLib
+IMPORT FGL com.fourjs.fclib.FrontCallLib
+
 PUBLIC FUNCTION composeMail() RETURNS ()
    DEFINE mailTo STRING
    DEFINE mailSubject STRING
    DEFINE mailContent STRING
    DEFINE mailCC STRING
    DEFINE mailBCC STRING
-   DEFINE result STRING
+   DEFINE r MiscLib.t_msStringResult
 
    CALL openWindow("ComposeMail", "Compose Mail")
 
@@ -21,16 +24,11 @@ PUBLIC FUNCTION composeMail() RETURNS ()
             ERROR "Recipient (To) is required"
             CONTINUE INPUT
          END IF
-         CALL ui.Interface.frontCall(
-            "standard",
-            "composeMail",
-            [mailTo, mailSubject, mailContent, mailCC, mailBCC],
-            [result]
-         )
-         IF result == "ok" THEN
-            MESSAGE "Mail application opened successfully"
+         LET r = MiscLib.composeMail(mailTo, mailSubject, mailContent, mailCC, mailBCC)
+         IF r.success THEN
+            MESSAGE r.message
          ELSE
-            ERROR SFMT("composeMail returned: %1", result)
+            ERROR r.message
          END IF
          CONTINUE INPUT
    END INPUT
@@ -41,17 +39,12 @@ PUBLIC FUNCTION composeMail() RETURNS ()
 END FUNCTION #composeMail
 
 PUBLIC FUNCTION connectivity() RETURNS ()
-   DEFINE result STRING
+   DEFINE r MiscLib.t_msStringResult
 
-   CALL ui.Interface.frontCall(
-      "standard",
-      "connectivity",
-      [],
-      [result]
-   )
+   LET r = MiscLib.connectivity()
 
    MENU "Connectivity"
-      ATTRIBUTES(STYLE="dialog", COMMENT=SFMT("Network connectivity: %1", result))
+      ATTRIBUTES(STYLE="dialog", COMMENT=r.message)
       COMMAND "OK"
          EXIT MENU
    END MENU
@@ -59,18 +52,12 @@ PUBLIC FUNCTION connectivity() RETURNS ()
 END FUNCTION #connectivity
 
 PUBLIC FUNCTION isForeground() RETURNS ()
-   DEFINE result BOOLEAN
+   DEFINE r MiscLib.t_msBoolResult
 
-   CALL ui.Interface.frontCall(
-      "standard",
-      "isForeground",
-      [],
-      [result]
-   )
+   LET r = MiscLib.isForeground()
 
    MENU "Is Foreground"
-      ATTRIBUTES(STYLE="dialog",
-         COMMENT=SFMT("Application is in foreground: %1", IIF(result, "TRUE", "FALSE")))
+      ATTRIBUTES(STYLE="dialog", COMMENT=r.message)
       COMMAND "OK"
          EXIT MENU
    END MENU
@@ -78,31 +65,18 @@ PUBLIC FUNCTION isForeground() RETURNS ()
 END FUNCTION #isForeground
 
 PUBLIC FUNCTION getGeolocation() RETURNS ()
-   DEFINE status STRING
-   DEFINE latitude FLOAT
-   DEFINE longitude FLOAT
-   DEFINE resultText STRING
+   DEFINE r MiscLib.t_msGeoResult
 
    CALL openWindow("Geolocation", "Get Geolocation")
 
-   CALL ui.Interface.frontCall(
-      "standard",
-      "getGeolocation",
-      [],
-      [status, latitude, longitude]
-   )
+   LET r = MiscLib.getGeolocation()
 
-   IF status == "ok" THEN
-      LET resultText = SFMT("Latitude: %1\nLongitude: %2", latitude, longitude)
-   ELSE
-      LET resultText = SFMT("Error: %1", status)
-   END IF
-
-   DISPLAY status TO formonly.geoStatus
-   DISPLAY latitude TO formonly.geoLatitude
-   DISPLAY longitude TO formonly.geoLongitude
+   DISPLAY IIF(r.success, "ok", "error") TO formonly.geoStatus
+   DISPLAY r.latitude TO formonly.geoLatitude
+   DISPLAY r.longitude TO formonly.geoLongitude
 
    MENU
+      ATTRIBUTES(STYLE="dialog", COMMENT=r.message)
       COMMAND "OK"
          EXIT MENU
    END MENU
@@ -112,60 +86,34 @@ PUBLIC FUNCTION getGeolocation() RETURNS ()
 END FUNCTION #getGeolocation
 
 PUBLIC FUNCTION clearFileCache() RETURNS ()
-   DEFINE result BOOLEAN
+   DEFINE r FrontCallLib.t_result
 
-   CALL ui.Interface.frontCall(
-      "standard",
-      "clearFileCache",
-      [],
-      [result]
-   )
+   LET r = MiscLib.clearFileCache()
 
-   IF result THEN
-      MENU "Clear File Cache"
-         ATTRIBUTES(STYLE="dialog", COMMENT="File cache cleared successfully")
-         COMMAND "OK"
-            EXIT MENU
-      END MENU
-   ELSE
-      MENU "Clear File Cache"
-         ATTRIBUTES(STYLE="dialog", COMMENT="Failed to clear file cache (only supported by GDC)")
-         COMMAND "OK"
-            EXIT MENU
-      END MENU
-   END IF
+   MENU "Clear File Cache"
+      ATTRIBUTES(STYLE="dialog", COMMENT=r.message)
+      COMMAND "OK"
+         EXIT MENU
+   END MENU
 
 END FUNCTION #clearFileCache
 
 PUBLIC FUNCTION storeSize() RETURNS ()
-   DEFINE result BOOLEAN
+   DEFINE r FrontCallLib.t_result
 
-   CALL ui.Interface.frontCall(
-      "standard",
-      "storeSize",
-      [],
-      [result]
-   )
+   LET r = MiscLib.storeSize()
 
-   IF result THEN
-      MENU "Store Size"
-         ATTRIBUTES(STYLE="dialog", COMMENT="Window size stored successfully. Resize the window, then use restoreSize to restore.")
-         COMMAND "OK"
-            EXIT MENU
-      END MENU
-   ELSE
-      MENU "Store Size"
-         ATTRIBUTES(STYLE="dialog", COMMENT="Failed to store window size (GDC only)")
-         COMMAND "OK"
-            EXIT MENU
-      END MENU
-   END IF
+   MENU "Store Size"
+      ATTRIBUTES(STYLE="dialog", COMMENT=r.message)
+      COMMAND "OK"
+         EXIT MENU
+   END MENU
 
 END FUNCTION #storeSize
 
 PUBLIC FUNCTION restoreSize() RETURNS ()
    DEFINE delay INTEGER
-   DEFINE result BOOLEAN
+   DEFINE r FrontCallLib.t_result
 
    CALL openWindow("WindowSize", "Restore Window Size")
 
@@ -177,16 +125,11 @@ PUBLIC FUNCTION restoreSize() RETURNS ()
       ON ACTION CANCEL
          EXIT INPUT
       AFTER INPUT
-         CALL ui.Interface.frontCall(
-            "standard",
-            "restoreSize",
-            [delay],
-            [result]
-         )
-         IF result THEN
-            MESSAGE "Window size restored"
+         LET r = MiscLib.restoreSize(delay)
+         IF r.success THEN
+            MESSAGE r.message
          ELSE
-            ERROR "Failed to restore window size (GDC only, requires prior storeSize call)"
+            ERROR r.message
          END IF
    END INPUT
 

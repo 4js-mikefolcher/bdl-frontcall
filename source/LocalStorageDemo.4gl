@@ -9,6 +9,9 @@
 #   localStorage.clear      - wipe all stored data
 #
 
+IMPORT FGL com.fourjs.fclib.LocalStorageLib
+IMPORT FGL com.fourjs.fclib.FrontCallLib
+
 MAIN
    DEFINE action       STRING
    DEFINE storageKey   STRING
@@ -49,7 +52,6 @@ MAIN
 
 END MAIN
 
-# ---------------------------------------------------------------------------
 PRIVATE FUNCTION setupCombo() RETURNS ()
    DEFINE combo ui.ComboBox
    LET combo = ui.ComboBox.forName("formonly.action")
@@ -62,7 +64,6 @@ PRIVATE FUNCTION setupCombo() RETURNS ()
    END IF
 END FUNCTION
 
-# ---------------------------------------------------------------------------
 PRIVATE FUNCTION showHint(action STRING) RETURNS ()
    DEFINE hint STRING
    CASE action
@@ -82,77 +83,57 @@ PRIVATE FUNCTION showHint(action STRING) RETURNS ()
    DISPLAY hint TO formonly.fieldLabel
 END FUNCTION
 
-# ---------------------------------------------------------------------------
 PRIVATE FUNCTION executeAction(action STRING, storageKey STRING, storageValue STRING) RETURNS ()
-   DEFINE result    STRING
-   DEFINE retValue  STRING
+   DEFINE r FrontCallLib.t_result
+   DEFINE getR LocalStorageLib.t_lsGetResult
+   DEFINE keysR LocalStorageLib.t_lsKeysResult
+   DEFINE result STRING
 
-   TRY
-      CASE action
+   CASE action
 
-         WHEN "setItem"
-            IF storageKey IS NULL OR storageKey.trimRight() = "" THEN
-               ERROR "Enter a Key first"
-               RETURN
-            END IF
-            CALL ui.Interface.frontCall(
-               "localStorage", "setItem",
-               [storageKey, storageValue], []
-            )
-            LET result = SFMT("Stored: '%1' = '%2'", storageKey, storageValue)
+      WHEN "setItem"
+         IF storageKey IS NULL OR storageKey.trimRight() = "" THEN
+            ERROR "Enter a Key first"
+            RETURN
+         END IF
+         LET r = LocalStorageLib.setItem(storageKey, storageValue)
+         LET result = r.message
 
-         WHEN "getItem"
-            IF storageKey IS NULL OR storageKey.trimRight() = "" THEN
-               ERROR "Enter a Key first"
-               RETURN
-            END IF
-            CALL ui.Interface.frontCall(
-               "localStorage", "getItem",
-               [storageKey], [retValue]
-            )
-            IF retValue IS NULL THEN
-               LET result = SFMT("No value found for key '%1'", storageKey)
-            ELSE
-               LET result = SFMT("'%1' = '%2'", storageKey, retValue)
-               DISPLAY retValue TO formonly.storageValue
-            END IF
+      WHEN "getItem"
+         IF storageKey IS NULL OR storageKey.trimRight() = "" THEN
+            ERROR "Enter a Key first"
+            RETURN
+         END IF
+         LET getR = LocalStorageLib.getItem(storageKey)
+         LET result = getR.message
+         IF getR.success AND getR.value IS NOT NULL THEN
+            DISPLAY getR.value TO formonly.storageValue
+         END IF
 
-         WHEN "keys"
-            CALL ui.Interface.frontCall(
-               "localStorage", "keys",
-               [], [result]
-            )
-            IF result IS NULL OR result.getLength() = 0 THEN
-               LET result = "(localStorage is empty)"
-            ELSE
-               LET result = SFMT("Stored keys:\n%1", result)
-            END IF
+      WHEN "keys"
+         LET keysR = LocalStorageLib.keys()
+         IF keysR.success AND keysR.keys IS NOT NULL AND keysR.keys.getLength() > 0 THEN
+            LET result = SFMT("Stored keys:\n%1", keysR.keys)
+         ELSE
+            LET result = keysR.message
+         END IF
 
-         WHEN "removeItem"
-            IF storageKey IS NULL OR storageKey.trimRight() = "" THEN
-               ERROR "Enter a Key first"
-               RETURN
-            END IF
-            CALL ui.Interface.frontCall(
-               "localStorage", "removeItem",
-               [storageKey], []
-            )
-            LET result = SFMT("Key '%1' removed from localStorage", storageKey)
+      WHEN "removeItem"
+         IF storageKey IS NULL OR storageKey.trimRight() = "" THEN
+            ERROR "Enter a Key first"
+            RETURN
+         END IF
+         LET r = LocalStorageLib.removeItem(storageKey)
+         LET result = r.message
 
-         WHEN "clear"
-            CALL ui.Interface.frontCall(
-               "localStorage", "clear",
-               [], []
-            )
-            LET result = "All localStorage data cleared"
+      WHEN "clear"
+         LET r = LocalStorageLib.clear()
+         LET result = r.message
 
-         OTHERWISE
-            LET result = SFMT("Unknown action: %1", action)
+      OTHERWISE
+         LET result = SFMT("Unknown action: %1", action)
 
-      END CASE
-   CATCH
-      LET result = SFMT("Error %1: %2", STATUS, err_get(STATUS))
-   END TRY
+   END CASE
 
    DISPLAY result TO formonly.result
    MESSAGE SFMT("[%1] => %2", action, result)

@@ -1,3 +1,6 @@
+IMPORT FGL com.fourjs.fclib.OSLib
+IMPORT FGL com.fourjs.fclib.FrontCallLib
+
 PUBLIC FUNCTION executeProgram(operation STRING) RETURNS ()
    DEFINE windowTitle STRING
    DEFINE fileName STRING
@@ -8,7 +11,7 @@ PUBLIC FUNCTION executeProgram(operation STRING) RETURNS ()
       "*.sh",
       "*.*"
    ]
-   DEFINE resultStatus BOOLEAN
+   DEFINE r FrontCallLib.t_result
    DEFINE runMode BOOLEAN
 
    LET windowTitle = IIF(operation == "execute", "Execute Program", "Open File with Program")
@@ -30,7 +33,7 @@ PUBLIC FUNCTION executeProgram(operation STRING) RETURNS ()
       ON ACTION CANCEL
          EXIT INPUT
       ON ACTION zoom
-         LET tmpFileName = getFrontendFile(wildcards, "Select a file to execute/open")
+         LET tmpFileName = pickFrontendFile(wildcards, "Select a file to execute/open")
          IF tmpFileName IS NOT NULL THEN
             LET fileName = tmpFileName
          END IF
@@ -40,24 +43,14 @@ PUBLIC FUNCTION executeProgram(operation STRING) RETURNS ()
             CONTINUE INPUT
          END IF
          IF operation == "execute" THEN
-            CALL ui.Interface.frontCall(
-               "standard",
-               "execute",
-               [fileName, runMode],
-               [resultStatus]
-            )
+            LET r = OSLib.execute(fileName, runMode)
          ELSE
-            CALL ui.Interface.frontCall(
-               "standard",
-               "shellExec",
-               [fileName],
-               [resultStatus]
-            )
+            LET r = OSLib.shellExec(fileName)
          END IF
-         IF resultStatus THEN
-            MESSAGE "Command/file executed successfully"
+         IF r.success THEN
+            MESSAGE r.message
          ELSE
-            ERROR "An error occurred while executing"
+            ERROR r.message
          END IF
          CONTINUE INPUT
 
@@ -92,29 +85,15 @@ PUBLIC FUNCTION frontendInfo() RETURNS ()
       "userPreferredLang",
       "windowSize"
    ]
-   DEFINE idx INTEGER
 
    CALL openWindow("FrontendInfo", "Frontend Information")
 
-   FOR idx = 1 TO propList.getLength()
-      LET feData[idx].propName = propList[idx]
-      TRY
-         LET feData[idx].propValue = getFrontendInfo(propList[idx])
-      CATCH
-         LET feData[idx].propValue = SFMT("(error: %1)", err_get(STATUS))
-      END TRY
-   END FOR
+   CALL loadFrontendInfo(propList, feData)
 
    DISPLAY ARRAY feData TO srFeInfo.*
 
       ON ACTION refresh ATTRIBUTES(TEXT="Refresh", IMAGE="fa-refresh")
-         FOR idx = 1 TO propList.getLength()
-            TRY
-               LET feData[idx].propValue = getFrontendInfo(propList[idx])
-            CATCH
-               LET feData[idx].propValue = SFMT("(error: %1)", err_get(STATUS))
-            END TRY
-         END FOR
+         CALL loadFrontendInfo(propList, feData)
 
       ON ACTION CANCEL
          EXIT DISPLAY
@@ -128,7 +107,7 @@ END FUNCTION #frontendInfo
 
 PUBLIC FUNCTION frontendEnvVar() RETURNS ()
    DEFINE varName STRING
-   DEFINE varValue STRING
+   DEFINE r OSLib.t_osStringResult
 
    CALL openWindow("FrontendEnv", "Frontend Environment Variable")
 
@@ -142,13 +121,13 @@ PUBLIC FUNCTION frontendEnvVar() RETURNS ()
          IF varName IS NULL THEN
             ERROR "Select a environment variable to display"
          ELSE
-            CALL ui.Interface.frontCall(
-               "standard",
-               "getEnv",
-               [varName],
-               [varValue]
-            )
-            DISPLAY varValue TO formonly.feValue
+            LET r = OSLib.getEnv(varName)
+            IF r.success THEN
+               DISPLAY r.value TO formonly.feValue
+            ELSE
+               DISPLAY "" TO formonly.feValue
+               ERROR r.message
+            END IF
          END IF
          CONTINUE INPUT
    END INPUT
@@ -158,35 +137,21 @@ PUBLIC FUNCTION frontendEnvVar() RETURNS ()
 
 END FUNCTION #frontendEnvVar
 
-PUBLIC FUNCTION generateHardcopy()
-   DEFINE resultSuccess BOOLEAN
-   DEFINE feName STRING
+PUBLIC FUNCTION generateHardcopy() RETURNS ()
+   DEFINE r FrontCallLib.t_result
 
-   CALL ui.Interface.frontCall(
-      "standard", "feInfo",
-      ["feName"], [feName]
-   )
-
-   IF feName = "Genero Desktop Client" THEN
-      CALL ui.Interface.frontCall(
-         "standard",
-         "hardCopy",
-         [1],
-         [resultSuccess]
-      )
-      IF resultSuccess THEN
-         MESSAGE "Hardcopy generated successfully"
-      ELSE
-         ERROR "An error occurred generating the hardcopy"
-      END IF
+   LET r = OSLib.hardCopy(1)
+   IF r.success THEN
+      MESSAGE r.message
    ELSE
-      ERROR "hardCopy is only supported in GDC"
+      ERROR r.message
    END IF
 
 END FUNCTION #generateHardcopy
 
 PUBLIC FUNCTION launchUrl() RETURNS ()
    DEFINE webUrl STRING
+   DEFINE r FrontCallLib.t_result
 
    CALL openWindow("WebsiteLauncher", "Open URL")
 
@@ -201,12 +166,12 @@ PUBLIC FUNCTION launchUrl() RETURNS ()
          IF webUrl IS NULL THEN
             ERROR "URL value is missing"
          ELSE
-            CALL ui.Interface.frontCall(
-               "standard",
-               "launchURL",
-               [webUrl],
-               []
-            )
+            LET r = OSLib.launchURL(webUrl)
+            IF r.success THEN
+               MESSAGE r.message
+            ELSE
+               ERROR r.message
+            END IF
          END IF
          CONTINUE INPUT
    END INPUT
@@ -220,6 +185,7 @@ PUBLIC FUNCTION frontendBrowse(operation STRING) RETURNS ()
    DEFINE browseValue STRING
    DEFINE tmpValue STRING
    DEFINE wildcards DYNAMIC ARRAY OF STRING = ["*.*"]
+   DEFINE r FrontCallLib.t_result
 
    CALL openWindow("FileBrowse", "Frontend Browse")
 
@@ -249,15 +215,15 @@ PUBLIC FUNCTION frontendBrowse(operation STRING) RETURNS ()
          LET tmpValue = NULL
          CASE operation
             WHEN "opendir"
-               LET tmpValue = getFrontendDir("Get a directory")
+               LET tmpValue = pickFrontendDir("Get a directory")
             WHEN "openfile"
-               LET tmpValue = getFrontendFile(wildcards, "Get a File")
+               LET tmpValue = pickFrontendFile(wildcards, "Get a File")
             WHEN "openfiles"
-               LET tmpValue = getFrontendFiles(wildcards, "Get Files")
+               LET tmpValue = pickFrontendFiles(wildcards, "Get Files")
             WHEN "playsound"
-               LET tmpValue = getFrontendFile(wildcards, "Get a Sound File")
+               LET tmpValue = pickFrontendFile(wildcards, "Get a Sound File")
             WHEN "savefile"
-               LET tmpValue = getFrontendSaveFile(wildcards, "Save Text File")
+               LET tmpValue = pickFrontendSaveFile(wildcards, "Save Text File")
          END CASE
          IF tmpValue IS NOT NULL THEN
             LET browseValue = tmpValue
@@ -270,12 +236,12 @@ PUBLIC FUNCTION frontendBrowse(operation STRING) RETURNS ()
             IF browseValue IS NULL THEN
                ERROR "Must select a sound file"
             ELSE
-               CALL ui.Interface.frontCall(
-                  "standard",
-                  "playSound",
-                  [browseValue],
-                  []
-               )
+               LET r = OSLib.playSound(browseValue, FALSE)
+               IF r.success THEN
+                  MESSAGE r.message
+               ELSE
+                  ERROR r.message
+               END IF
             END IF
             CONTINUE INPUT
          END IF
@@ -286,93 +252,70 @@ PUBLIC FUNCTION frontendBrowse(operation STRING) RETURNS ()
 
 END FUNCTION #frontendBrowse
 
-PRIVATE FUNCTION getFrontendInfo(propName STRING) RETURNS STRING
-   DEFINE propValue STRING
+PRIVATE FUNCTION loadFrontendInfo(
+   propList DYNAMIC ARRAY OF STRING,
+   feData DYNAMIC ARRAY OF RECORD
+      propName  STRING,
+      propValue STRING
+   END RECORD
+) RETURNS ()
+   DEFINE idx INTEGER
+   DEFINE r OSLib.t_osStringResult
 
-   CALL ui.Interface.frontCall(
-      "standard",
-      "feInfo",
-      [propName],
-      [propValue]
-   )
+   FOR idx = 1 TO propList.getLength()
+      LET feData[idx].propName = propList[idx]
+      LET r = OSLib.feInfo(propList[idx])
+      IF r.success THEN
+         LET feData[idx].propValue = r.value
+      ELSE
+         LET feData[idx].propValue = SFMT("(%1)", r.message)
+      END IF
+   END FOR
 
-   RETURN propValue
+END FUNCTION #loadFrontendInfo
 
-END FUNCTION
+PRIVATE FUNCTION pickFrontendFile(wildcards DYNAMIC ARRAY OF STRING, caption STRING) RETURNS STRING
+   DEFINE r OSLib.t_osStringResult
 
-PRIVATE FUNCTION getFrontendFile(wildcards DYNAMIC ARRAY OF STRING, caption STRING) RETURNS STRING
-   DEFINE frontendFile STRING
+   LET r = OSLib.openFile("", "File", joinWildcards(wildcards), caption)
+   RETURN r.value
+
+END FUNCTION #pickFrontendFile
+
+PRIVATE FUNCTION pickFrontendDir(caption STRING) RETURNS STRING
+   DEFINE r OSLib.t_osStringResult
+
+   LET r = OSLib.openDir("", caption)
+   RETURN r.value
+
+END FUNCTION #pickFrontendDir
+
+PRIVATE FUNCTION pickFrontendFiles(wildcards DYNAMIC ARRAY OF STRING, caption STRING) RETURNS STRING
+   DEFINE r OSLib.t_osFilesResult
+
+   LET r = OSLib.openFiles("", "File", joinWildcards(wildcards), caption)
+   RETURN r.files
+
+END FUNCTION #pickFrontendFiles
+
+PRIVATE FUNCTION pickFrontendSaveFile(wildcards DYNAMIC ARRAY OF STRING, caption STRING) RETURNS STRING
+   DEFINE r OSLib.t_osStringResult
+
+   LET r = OSLib.saveFile("", "File", joinWildcards(wildcards), caption)
+   RETURN r.value
+
+END FUNCTION #pickFrontendSaveFile
+
+PRIVATE FUNCTION joinWildcards(wildcards DYNAMIC ARRAY OF STRING) RETURNS STRING
    DEFINE wildcardString STRING
    DEFINE idx INTEGER
 
    FOR idx = 1 TO wildcards.getLength()
       LET wildcardString = SFMT("%1 %2", wildcardString, wildcards[idx])
    END FOR
+   RETURN wildcardString.trim()
 
-   CALL ui.Interface.frontCall(
-      "standard",
-      "openFile",
-      ["", "File", wildcardString.trim(), caption],
-      [frontendFile]
-   )
-
-   RETURN frontendFile
-
-END FUNCTION #getFrontendFile
-
-PRIVATE FUNCTION getFrontendDir(caption STRING) RETURNS STRING
-   DEFINE frontendDir STRING
-
-   CALL ui.Interface.frontCall(
-      "standard",
-      "openDir",
-      ["", caption],
-      [frontendDir]
-   )
-
-   RETURN frontendDir
-
-END FUNCTION #getFrontendDir
-
-PRIVATE FUNCTION getFrontendFiles(wildcards DYNAMIC ARRAY OF STRING, caption STRING) RETURNS STRING
-   DEFINE frontendFiles STRING
-   DEFINE wildcardString STRING
-   DEFINE idx INTEGER
-
-   FOR idx = 1 TO wildcards.getLength()
-      LET wildcardString = SFMT("%1 %2", wildcardString, wildcards[idx])
-   END FOR
-
-   CALL ui.Interface.frontCall(
-      "standard",
-      "openFiles",
-      ["", "File", wildcardString.trim(), caption],
-      [frontendFiles]
-   )
-
-   RETURN frontendFiles
-
-END FUNCTION #getFrontendFiles
-
-PRIVATE FUNCTION getFrontendSaveFile(wildcards DYNAMIC ARRAY OF STRING, caption STRING) RETURNS STRING
-   DEFINE frontendFile STRING
-   DEFINE wildcardString STRING
-   DEFINE idx INTEGER
-
-   FOR idx = 1 TO wildcards.getLength()
-      LET wildcardString = SFMT("%1 %2", wildcardString, wildcards[idx])
-   END FOR
-
-   CALL ui.Interface.frontCall(
-      "standard",
-      "saveFile",
-      ["", "File", wildcardString.trim(), caption],
-      [frontendFile]
-   )
-
-   RETURN frontendFile
-
-END FUNCTION #getFrontendSaveFile
+END FUNCTION #joinWildcards
 
 PRIVATE FUNCTION openWindow(formName STRING, formTitle STRING) RETURNS ()
 
@@ -401,35 +344,3 @@ PRIVATE FUNCTION setRunModeCombo() RETURNS ()
    END IF
 
 END FUNCTION #setRunModeCombo
-
-PRIVATE FUNCTION setFrontendCombo() RETURNS ()
-   DEFINE combo ui.ComboBox
-   DEFINE valueList DYNAMIC ARRAY OF STRING = [
-      "browserName",
-      "colorScheme",
-      "dataDirectory",
-      "deviceId",
-      "deviceModel",
-      "feName",
-      "fePath",
-      "freeStorageSpace",
-      "ip",
-      "numScreens",
-      "osType",
-      "osVersion",
-      "ppi",
-      "screenResolution",
-      "target",
-      "userPreferredLang",
-      "windowSize"
-   ]
-   DEFINE idx INTEGER
-
-   LET combo = ui.ComboBox.forName("formonly.feInfo")
-   IF combo IS NOT NULL THEN
-      FOR idx = 1 TO valueList.getLength()
-         CALL combo.addItem(valueList[idx], valueList[idx])
-      END FOR
-   END IF
-
-END FUNCTION #setFrontendCombo

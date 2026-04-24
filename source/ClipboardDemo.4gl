@@ -1,3 +1,6 @@
+IMPORT FGL com.fourjs.fclib.ClipboardLib
+IMPORT FGL com.fourjs.fclib.FrontCallLib
+
 MAIN
    DEFINE cbAction STRING
    DEFINE inputText STRING
@@ -45,8 +48,8 @@ PRIVATE FUNCTION setupActionCombo() RETURNS ()
 END FUNCTION #setupActionCombo
 
 PRIVATE FUNCTION executeAction(cbAction STRING, inputText STRING) RETURNS ()
-   DEFINE resultStatus BOOLEAN
-   DEFINE clipboardText STRING
+   DEFINE r FrontCallLib.t_result
+   DEFINE getR ClipboardLib.t_cbGetResult
    DEFINE outputText STRING
 
    CASE cbAction
@@ -55,55 +58,36 @@ PRIVATE FUNCTION executeAction(cbAction STRING, inputText STRING) RETURNS ()
             ERROR "Enter text in the Input field first"
             RETURN
          END IF
-         CALL ui.Interface.frontCall(
-            "standard", "cbAdd",
-            [inputText], [resultStatus]
-         )
-         LET outputText = IIF(resultStatus,
-            "Text added to clipboard",
-            "Failed to add text to clipboard")
+         LET r = ClipboardLib.add(inputText)
+         LET outputText = r.message
 
       WHEN "cbClear"
-         CALL ui.Interface.frontCall(
-            "standard", "cbClear",
-            [], [resultStatus]
-         )
-         LET outputText = IIF(resultStatus,
-            "Clipboard cleared",
-            "Failed to clear clipboard")
+         LET r = ClipboardLib.clear()
+         LET outputText = r.message
 
       WHEN "cbGet"
-         CALL ui.Interface.frontCall(
-            "standard", "cbGet",
-            [], [clipboardText]
-         )
-         IF clipboardText IS NOT NULL THEN
-            LET outputText = clipboardText
+         LET getR = ClipboardLib.get()
+         IF getR.success THEN
+            IF getR.text IS NOT NULL THEN
+               LET outputText = getR.text
+            ELSE
+               LET outputText = "(clipboard is empty)"
+            END IF
          ELSE
-            LET outputText = "(clipboard is empty)"
+            LET outputText = getR.message
          END IF
 
       WHEN "cbPaste"
-         CALL ui.Interface.frontCall(
-            "standard", "cbPaste",
-            [], [resultStatus]
-         )
-         LET outputText = IIF(resultStatus,
-            "Pasted into current field",
-            "Failed to paste from clipboard")
+         LET r = ClipboardLib.paste()
+         LET outputText = r.message
 
       WHEN "cbSet"
          IF inputText IS NULL THEN
             ERROR "Enter text in the Input field first"
             RETURN
          END IF
-         CALL ui.Interface.frontCall(
-            "standard", "cbSet",
-            [inputText], [resultStatus]
-         )
-         LET outputText = IIF(resultStatus,
-            "Clipboard content set",
-            "Failed to set clipboard content")
+         LET r = ClipboardLib.set(inputText)
+         LET outputText = r.message
 
    END CASE
 

@@ -1,5 +1,9 @@
+IMPORT FGL com.fourjs.fclib.BrowserLib
+IMPORT FGL com.fourjs.fclib.FrontCallLib
+
 PUBLIC FUNCTION setApplicationState() RETURNS ()
    DEFINE anchor STRING
+   DEFINE r FrontCallLib.t_result
 
    CALL openWindow("BrowserState", "Set Application State")
 
@@ -14,13 +18,12 @@ PUBLIC FUNCTION setApplicationState() RETURNS ()
             ERROR "Anchor value is required"
             CONTINUE INPUT
          END IF
-         CALL ui.Interface.frontCall(
-            "browser",
-            "setApplicationState",
-            [anchor],
-            []
-         )
-         MESSAGE SFMT("Browser anchor set to: #%1", anchor)
+         LET r = BrowserLib.setAppState(anchor)
+         IF r.success THEN
+            MESSAGE r.message
+         ELSE
+            ERROR r.message
+         END IF
          CONTINUE INPUT
    END INPUT
 
@@ -30,21 +33,12 @@ PUBLIC FUNCTION setApplicationState() RETURNS ()
 END FUNCTION #setApplicationState
 
 PUBLIC FUNCTION getApplicationState() RETURNS ()
-   DEFINE anchor STRING
+   DEFINE r BrowserLib.t_bwGetResult
 
-   CALL ui.Interface.frontCall(
-      "browser",
-      "getApplicationState",
-      [],
-      [anchor]
-   )
-
-   IF anchor IS NULL THEN
-      LET anchor = "(no anchor set)"
-   END IF
+   LET r = BrowserLib.getAppState()
 
    MENU "Browser Application State"
-      ATTRIBUTES(STYLE="dialog", COMMENT=SFMT("Current URL anchor: #%1", anchor))
+      ATTRIBUTES(STYLE="dialog", COMMENT=r.message)
       COMMAND "OK"
          EXIT MENU
    END MENU

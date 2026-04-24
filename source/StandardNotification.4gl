@@ -1,14 +1,12 @@
+IMPORT FGL com.fourjs.fclib.NotificationLib
+IMPORT FGL com.fourjs.fclib.FrontCallLib
+
 PUBLIC FUNCTION createNotification() RETURNS ()
    DEFINE notifTitle STRING
    DEFINE notifContent STRING
    DEFINE notifIcon STRING
-   DEFINE options RECORD
-      id INTEGER,
-      title STRING,
-      content STRING,
-      icon STRING
-   END RECORD
-   DEFINE notifId INTEGER
+   DEFINE options NotificationLib.t_nfOptions
+   DEFINE r NotificationLib.t_nfCreateResult
 
    CALL openWindow("Notification", "Create Notification")
 
@@ -28,16 +26,11 @@ PUBLIC FUNCTION createNotification() RETURNS ()
          LET options.title = notifTitle
          LET options.content = notifContent
          LET options.icon = notifIcon
-         CALL ui.Interface.frontCall(
-            "standard",
-            "createNotification",
-            [options],
-            [notifId]
-         )
-         IF notifId IS NOT NULL THEN
-            MESSAGE SFMT("Notification created with ID: %1", notifId)
+         LET r = NotificationLib.createNotification(options)
+         IF r.success THEN
+            MESSAGE r.message
          ELSE
-            ERROR "Notification could not be created"
+            ERROR r.message
          END IF
          CONTINUE INPUT
    END INPUT
@@ -48,19 +41,14 @@ PUBLIC FUNCTION createNotification() RETURNS ()
 END FUNCTION #createNotification
 
 PUBLIC FUNCTION clearNotifications() RETURNS ()
-   DEFINE ret STRING
+   DEFINE r FrontCallLib.t_result
    DEFINE response STRING
 
    MENU "Clear Notifications"
-      ATTRIBUTES(STYLE="dialog", COMMENT="Clear all notifications? Pass NULL to clear all.")
+      ATTRIBUTES(STYLE="dialog", COMMENT="Clear all notifications?")
       COMMAND "Clear All"
-         CALL ui.Interface.frontCall(
-            "standard",
-            "clearNotifications",
-            [NULL],
-            [ret]
-         )
-         LET response = SFMT("clearNotifications result: %1", ret)
+         LET r = NotificationLib.clearNotifications(NULL)
+         LET response = r.message
       COMMAND "Cancel"
          LET response = "Cancelled"
    END MENU
@@ -76,28 +64,24 @@ PUBLIC FUNCTION clearNotifications() RETURNS ()
 END FUNCTION #clearNotifications
 
 PUBLIC FUNCTION getLastNotificationInteractions() RETURNS ()
-   TYPE t_nl DYNAMIC ARRAY OF RECORD
-      id STRING,
-      type STRING
-   END RECORD
-   DEFINE nl t_nl
+   DEFINE r NotificationLib.t_nfInteractionsResult
    DEFINE resultText STRING
    DEFINE idx INTEGER
 
-   CALL ui.Interface.frontCall(
-      "standard",
-      "getLastNotificationInteractions",
-      [],
-      [nl]
-   )
+   LET r = NotificationLib.getLastNotificationInteractions()
 
-   IF nl.getLength() == 0 THEN
-      LET resultText = "No notification interactions found"
+   IF NOT r.success THEN
+      LET resultText = r.message
    ELSE
-      LET resultText = SFMT("Found %1 interaction(s):\n", nl.getLength())
-      FOR idx = 1 TO nl.getLength()
-         LET resultText = resultText, SFMT("  ID: %1, Type: %2\n", nl[idx].id, nl[idx].type)
-      END FOR
+      IF r.interactions.getLength() = 0 THEN
+         LET resultText = "No notification interactions found"
+      ELSE
+         LET resultText = SFMT("Found %1 interaction(s):\n", r.interactions.getLength())
+         FOR idx = 1 TO r.interactions.getLength()
+            LET resultText = resultText,
+               SFMT("  ID: %1, Type: %2\n", r.interactions[idx].id, r.interactions[idx].type)
+         END FOR
+      END IF
    END IF
 
    MENU "Notification Interactions"

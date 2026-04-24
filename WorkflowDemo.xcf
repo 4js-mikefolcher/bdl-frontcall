@@ -2,13 +2,13 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:noNamespaceSchemaLocation="http://www.4js.com/ns/gas/6.00/cfextwa.xsd">
   <DESCRIPTION>
-    <SHORT>Monitor Demo</SHORT>
-    <LONG>Demonstrates the monitor.update frontcall for GDC configuration updates</LONG>
+    <SHORT>Workflow Demo</SHORT>
+    <LONG>Demonstrates com.fourjs.fclib.WorkflowLib: getClientHome() and putAndOpen() — GDC only, since they depend on standard.getEnv and standard.shellExec.</LONG>
   </DESCRIPTION>
   <EXECUTION>
     <ENVIRONMENT_VARIABLE Id="FGLRESOURCEPATH" Concat="APPEND">$(res.deployment.root)/source</ENVIRONMENT_VARIABLE>
     <ENVIRONMENT_VARIABLE Id="FGLLDPATH" Concat="APPEND">$(res.deployment.root)$(res.path.separator)$(res.deployment.root)/source</ENVIRONMENT_VARIABLE>
     <PATH>$(res.deployment.root)/source</PATH>
-    <MODULE>MonitorDemo.42m</MODULE>
+    <MODULE>WorkflowDemo.42m</MODULE>
   </EXECUTION>
 </APPLICATION>

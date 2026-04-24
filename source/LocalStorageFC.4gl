@@ -1,6 +1,10 @@
+IMPORT FGL com.fourjs.fclib.LocalStorageLib
+IMPORT FGL com.fourjs.fclib.FrontCallLib
+
 PUBLIC FUNCTION storageSetItem() RETURNS ()
    DEFINE storageKey STRING
    DEFINE storageValue STRING
+   DEFINE r FrontCallLib.t_result
 
    CALL openWindow("LocalStorage", "localStorage.setItem")
 
@@ -16,14 +20,12 @@ PUBLIC FUNCTION storageSetItem() RETURNS ()
             ERROR "Key is required"
             CONTINUE INPUT
          END IF
-         CALL ui.Interface.frontCall(
-            "localStorage",
-            "setItem",
-            [storageKey, storageValue],
-            []
-         )
-         MESSAGE SFMT("Stored: %1 = %2", storageKey, storageValue)
-         CONTINUE INPUT
+         LET r = LocalStorageLib.setItem(storageKey, storageValue)
+         IF r.success THEN
+            MESSAGE r.message
+         ELSE
+            ERROR r.message
+         END IF
    END INPUT
 
    LET int_flag = FALSE
@@ -33,7 +35,7 @@ END FUNCTION #storageSetItem
 
 PUBLIC FUNCTION storageGetItem() RETURNS ()
    DEFINE storageKey STRING
-   DEFINE storageValue STRING
+   DEFINE r LocalStorageLib.t_lsGetResult
 
    CALL openWindow("LocalStorage", "localStorage.getItem")
 
@@ -48,17 +50,12 @@ PUBLIC FUNCTION storageGetItem() RETURNS ()
             ERROR "Key is required"
             CONTINUE INPUT
          END IF
-         CALL ui.Interface.frontCall(
-            "localStorage",
-            "getItem",
-            [storageKey],
-            [storageValue]
-         )
-         DISPLAY storageValue TO formonly.storageValue
-         IF storageValue IS NULL THEN
-            MESSAGE SFMT("No value found for key: %1", storageKey)
+         LET r = LocalStorageLib.getItem(storageKey)
+         IF r.success THEN
+            DISPLAY r.value TO formonly.storageValue
+            MESSAGE r.message
          ELSE
-            MESSAGE SFMT("Value for '%1': %2", storageKey, storageValue)
+            ERROR r.message
          END IF
          CONTINUE INPUT
    END INPUT
@@ -69,21 +66,19 @@ PUBLIC FUNCTION storageGetItem() RETURNS ()
 END FUNCTION #storageGetItem
 
 PUBLIC FUNCTION storageKeys() RETURNS ()
-   DEFINE keyList STRING
+   DEFINE r LocalStorageLib.t_lsKeysResult
+   DEFINE comment STRING
 
-   CALL ui.Interface.frontCall(
-      "localStorage",
-      "keys",
-      [],
-      [keyList]
-   )
+   LET r = LocalStorageLib.keys()
 
-   IF keyList IS NULL OR keyList.getLength() == 0 THEN
-      LET keyList = "(no keys found)"
+   IF r.success AND r.keys IS NOT NULL AND r.keys.getLength() > 0 THEN
+      LET comment = SFMT("Stored keys:\n%1", r.keys)
+   ELSE
+      LET comment = r.message
    END IF
 
    MENU "localStorage Keys"
-      ATTRIBUTES(STYLE="dialog", COMMENT=SFMT("Stored keys:\n%1", keyList))
+      ATTRIBUTES(STYLE="dialog", COMMENT=comment)
       COMMAND "OK"
          EXIT MENU
    END MENU
@@ -92,6 +87,7 @@ END FUNCTION #storageKeys
 
 PUBLIC FUNCTION storageRemoveItem() RETURNS ()
    DEFINE storageKey STRING
+   DEFINE r FrontCallLib.t_result
 
    CALL openWindow("LocalStorage", "localStorage.removeItem")
 
@@ -106,13 +102,12 @@ PUBLIC FUNCTION storageRemoveItem() RETURNS ()
             ERROR "Key is required"
             CONTINUE INPUT
          END IF
-         CALL ui.Interface.frontCall(
-            "localStorage",
-            "removeItem",
-            [storageKey],
-            []
-         )
-         MESSAGE SFMT("Key '%1' removed from local storage", storageKey)
+         LET r = LocalStorageLib.removeItem(storageKey)
+         IF r.success THEN
+            MESSAGE r.message
+         ELSE
+            ERROR r.message
+         END IF
    END INPUT
 
    LET int_flag = FALSE
@@ -121,18 +116,14 @@ PUBLIC FUNCTION storageRemoveItem() RETURNS ()
 END FUNCTION #storageRemoveItem
 
 PUBLIC FUNCTION storageClear() RETURNS ()
+   DEFINE r FrontCallLib.t_result
    DEFINE response STRING
 
    MENU "Clear Local Storage"
       ATTRIBUTES(STYLE="dialog", COMMENT="This will remove ALL key/value pairs from local storage. Continue?")
       COMMAND "Clear All"
-         CALL ui.Interface.frontCall(
-            "localStorage",
-            "clear",
-            [],
-            []
-         )
-         LET response = "Local storage cleared successfully"
+         LET r = LocalStorageLib.clear()
+         LET response = r.message
       COMMAND "Cancel"
          LET response = "Cancelled"
    END MENU

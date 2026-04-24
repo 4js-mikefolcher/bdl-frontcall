@@ -4,9 +4,9 @@
 # Standalone demo for the monitor frontcall (GDC only):
 #   monitor.update - apply a GDC monitor configuration update file
 #
-# Usage: provide the path to a GDC .upd/.json update file and optional
-# warning text to display to the user before the update is applied.
-#
+
+IMPORT FGL com.fourjs.fclib.MonitorLib
+IMPORT FGL com.fourjs.fclib.FrontCallLib
 
 MAIN
    DEFINE action      STRING
@@ -48,7 +48,6 @@ MAIN
 
 END MAIN
 
-# ---------------------------------------------------------------------------
 PRIVATE FUNCTION setupCombo() RETURNS ()
    DEFINE combo ui.ComboBox
    LET combo = ui.ComboBox.forName("formonly.action")
@@ -57,7 +56,6 @@ PRIVATE FUNCTION setupCombo() RETURNS ()
    END IF
 END FUNCTION
 
-# ---------------------------------------------------------------------------
 PRIVATE FUNCTION showHint(action STRING) RETURNS ()
    DEFINE hint STRING
    CASE action
@@ -69,34 +67,24 @@ PRIVATE FUNCTION showHint(action STRING) RETURNS ()
    DISPLAY hint TO formonly.fieldLabel
 END FUNCTION
 
-# ---------------------------------------------------------------------------
 PRIVATE FUNCTION executeAction(action STRING, updatePath STRING, warningText STRING) RETURNS ()
+   DEFINE r FrontCallLib.t_result
    DEFINE result STRING
 
-   TRY
-      CASE action
+   CASE action
 
-         WHEN "update"
-            IF updatePath IS NULL OR updatePath.trimRight() = "" THEN
-               ERROR "Enter the update file path first"
-               RETURN
-            END IF
-            CALL ui.Interface.frontCall(
-               "monitor", "update",
-               [updatePath, warningText],
-               [result]
-            )
-            IF result IS NULL THEN
-               LET result = "monitor.update completed (no return value)"
-            END IF
+      WHEN "update"
+         IF updatePath IS NULL OR updatePath.trimRight() = "" THEN
+            ERROR "Enter the update file path first"
+            RETURN
+         END IF
+         LET r = MonitorLib.update(updatePath, warningText, FALSE)
+         LET result = r.message
 
-         OTHERWISE
-            LET result = SFMT("Unknown action: %1", action)
+      OTHERWISE
+         LET result = SFMT("Unknown action: %1", action)
 
-      END CASE
-   CATCH
-      LET result = SFMT("Error %1: %2", STATUS, err_get(STATUS))
-   END TRY
+   END CASE
 
    DISPLAY result TO formonly.result
    MESSAGE SFMT("[%1] => %2", action, result)

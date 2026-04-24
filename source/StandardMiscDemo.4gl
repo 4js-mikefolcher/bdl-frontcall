@@ -1,19 +1,13 @@
 #
 # StandardMiscDemo.4gl
 #
-# Standalone demo for standard miscellaneous frontcalls:
-#   standard.connectivity   - check network status
-#   standard.isForeground   - is app in foreground
-#   standard.getGeolocation - get device latitude/longitude
-#   standard.clearFileCache - clear GDC file cache
-#   standard.storeSize      - store current window size
-#   standard.restoreSize    - restore previously stored window size
-#   standard.hardCopy       - print the current form
-#   standard.composeMail    - open mail app with pre-filled fields
+# Standalone demo for standard miscellaneous frontcalls via MiscLib /
+# OSLib — no inline ui.Interface.frontCall in this module.
 #
-# Input 1 usage: To (composeMail) | Delay ms (restoreSize)
-# Input 2 usage: Subject (composeMail)
-#
+
+IMPORT FGL com.fourjs.fclib.MiscLib
+IMPORT FGL com.fourjs.fclib.OSLib
+IMPORT FGL com.fourjs.fclib.FrontCallLib
 
 MAIN
    DEFINE action     STRING
@@ -55,7 +49,6 @@ MAIN
 
 END MAIN
 
-# ---------------------------------------------------------------------------
 PRIVATE FUNCTION setupCombo() RETURNS ()
    DEFINE combo ui.ComboBox
    LET combo = ui.ComboBox.forName("formonly.action")
@@ -71,7 +64,6 @@ PRIVATE FUNCTION setupCombo() RETURNS ()
    END IF
 END FUNCTION
 
-# ---------------------------------------------------------------------------
 PRIVATE FUNCTION showHint(action STRING) RETURNS ()
    DEFINE hint STRING
    CASE action
@@ -80,7 +72,7 @@ PRIVATE FUNCTION showHint(action STRING) RETURNS ()
       WHEN "isForeground"
          LET hint = "No input needed — press Execute to check if the app is in the foreground"
       WHEN "getGeolocation"
-         LET hint = "No input needed — press Execute to get device latitude and longitude"
+         LET hint = "No input needed — press Execute to get device latitude and longitude (mobile/GBC only)"
       WHEN "clearFileCache"
          LET hint = "No input needed — press Execute to clear the GDC file cache (GDC only)"
       WHEN "storeSize"
@@ -88,7 +80,7 @@ PRIVATE FUNCTION showHint(action STRING) RETURNS ()
       WHEN "restoreSize"
          LET hint = "Input 1: delay in milliseconds (e.g. 500) — then Execute to restore size (GDC only)"
       WHEN "hardCopy"
-         LET hint = "No input needed — press Execute to print the current form"
+         LET hint = "No input needed — press Execute to print the current form (GDC only)"
       WHEN "composeMail"
          LET hint = "Input 1: To address   Input 2: Subject — then Execute to open mail app"
       OTHERWISE
@@ -97,116 +89,60 @@ PRIVATE FUNCTION showHint(action STRING) RETURNS ()
    DISPLAY hint TO formonly.fieldLabel
 END FUNCTION
 
-# ---------------------------------------------------------------------------
 PRIVATE FUNCTION executeAction(action STRING, inputText1 STRING, inputText2 STRING) RETURNS ()
-   DEFINE result    STRING
-   DEFINE bResult   BOOLEAN
-   DEFINE status    STRING
-   DEFINE latitude  FLOAT
-   DEFINE longitude FLOAT
-   DEFINE delay     INTEGER
-   DEFINE feName    STRING
+   DEFINE r FrontCallLib.t_result
+   DEFINE sR MiscLib.t_msStringResult
+   DEFINE bR MiscLib.t_msBoolResult
+   DEFINE gR MiscLib.t_msGeoResult
+   DEFINE delay INTEGER
+   DEFINE result STRING
 
-   TRY
-      CASE action
+   CASE action
 
-         WHEN "connectivity"
-            CALL ui.Interface.frontCall(
-               "standard", "connectivity",
-               [], [result]
-            )
-            LET result = SFMT("Network connectivity: %1", result)
+      WHEN "connectivity"
+         LET sR = MiscLib.connectivity()
+         LET result = sR.message
 
-         WHEN "isForeground"
-            CALL ui.Interface.frontCall(
-               "standard", "isForeground",
-               [], [bResult]
-            )
-            LET result = SFMT("Application is in foreground: %1",
-               IIF(bResult, "TRUE", "FALSE"))
+      WHEN "isForeground"
+         LET bR = MiscLib.isForeground()
+         LET result = bR.message
 
-         WHEN "getGeolocation"
-            CALL ui.Interface.frontCall(
-               "standard", "getGeolocation",
-               [], [status, latitude, longitude]
-            )
-            IF status = "ok" THEN
-               LET result = SFMT("Latitude:  %1\nLongitude: %2", latitude, longitude)
-            ELSE
-               LET result = SFMT("getGeolocation status: %1", status)
-            END IF
+      WHEN "getGeolocation"
+         LET gR = MiscLib.getGeolocation()
+         LET result = gR.message
 
-         WHEN "clearFileCache"
-            CALL ui.Interface.frontCall(
-               "standard", "clearFileCache",
-               [], [bResult]
-            )
-            LET result = IIF(bResult,
-               "File cache cleared successfully (GDC only)",
-               "clearFileCache returned FALSE (GDC only)")
+      WHEN "clearFileCache"
+         LET r = MiscLib.clearFileCache()
+         LET result = r.message
 
-         WHEN "storeSize"
-            CALL ui.Interface.frontCall(
-               "standard", "storeSize",
-               [], [bResult]
-            )
-            LET result = IIF(bResult,
-               "Window size stored. Resize the window, then use restoreSize.",
-               "storeSize returned FALSE (GDC only)")
+      WHEN "storeSize"
+         LET r = MiscLib.storeSize()
+         LET result = r.message
 
-         WHEN "restoreSize"
-            LET delay = 500
-            IF inputText1 IS NOT NULL AND inputText1.trimRight() != "" THEN
-               LET delay = inputText1
-            END IF
-            CALL ui.Interface.frontCall(
-               "standard", "restoreSize",
-               [delay], [bResult]
-            )
-            LET result = IIF(bResult,
-               SFMT("Window size restored (delay=%1 ms)", delay),
-               "restoreSize returned FALSE (requires prior storeSize, GDC only)")
+      WHEN "restoreSize"
+         LET delay = 500
+         IF inputText1 IS NOT NULL AND inputText1.trimRight() != "" THEN
+            LET delay = inputText1
+         END IF
+         LET r = MiscLib.restoreSize(delay)
+         LET result = r.message
 
-         WHEN "hardCopy"
-            CALL ui.Interface.frontCall(
-               "standard", "feInfo",
-               ["feName"], [feName]
-            )
-            IF feName = "Genero Desktop Client" THEN
-               CALL ui.Interface.frontCall(
-                  "standard", "hardCopy",
-                  [1], [bResult]
-               )
-               LET result = IIF(bResult,
-                  "Hardcopy generated successfully",
-                  "hardCopy returned FALSE")
-            ELSE
-               LET result = "hardCopy is only supported in GDC"
-            END IF
+      WHEN "hardCopy"
+         LET r = OSLib.hardCopy(1)
+         LET result = r.message
 
-         WHEN "composeMail"
-            IF inputText1 IS NULL OR inputText1.trimRight() = "" THEN
-               ERROR "Enter a To address in Input 1"
-               RETURN
-            END IF
-            CALL ui.Interface.frontCall(
-               "standard", "composeMail",
-               [inputText1, inputText2, "", "", ""],
-               [result]
-            )
-            IF result = "ok" THEN
-               LET result = "Mail application opened successfully"
-            ELSE
-               LET result = SFMT("composeMail returned: %1", result)
-            END IF
+      WHEN "composeMail"
+         IF inputText1 IS NULL OR inputText1.trimRight() = "" THEN
+            ERROR "Enter a To address in Input 1"
+            RETURN
+         END IF
+         LET sR = MiscLib.composeMail(inputText1, inputText2, "", "", "")
+         LET result = sR.message
 
-         OTHERWISE
-            LET result = SFMT("Unknown action: %1", action)
+      OTHERWISE
+         LET result = SFMT("Unknown action: %1", action)
 
-      END CASE
-   CATCH
-      LET result = SFMT("Error %1: %2", STATUS, err_get(STATUS))
-   END TRY
+   END CASE
 
    DISPLAY result TO formonly.result
    MESSAGE SFMT("[%1] => %2", action, result)
